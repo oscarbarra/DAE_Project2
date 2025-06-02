@@ -1,0 +1,14 @@
+
+ Nombre del proyecto
+** Completa y clara descripción del problema que aborda
+** Objetivos del proyecto (qué se espera lograr con esta aplicación)
+** Usuarios objetivo (a quién está dirigida y qué necesidades se pretende cubrir)
+** Características principales y lista detallada de las funcionalidades que se desarrollarán
+** Arquitectura del sistema (especificar si se usará React, Flask, Node, PostgreSQL, etc.)
+** Diagrama simple o esquemático de los componentes del sistema y su interacción
+
+** Plan de trabajo para al menos las dos semanas siguientes
+** Tareas planificadas y metas mínimas por semana
+** División y asignación de tareas a cada integrante (si hay más de un integrante)
+** Consideraciones técnicas y desafíos previstos (dificultades técnicas esperadas, 
+** herramientas clave que se utilizarán, y decisiones aún pendientes)

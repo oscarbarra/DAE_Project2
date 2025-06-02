@@ -1,0 +1,31 @@
+
+    | Users    	  |
+----|-------------|-----    
+PK  | id_usr      | int
+    | usr_name    | str
+    | usr_mail    | str  (unique)
+    | usr_pass    | str  (hash)
+    | secret_pass | str  (hash)
+    | last_login  | date
+FK  | id_rol	  | int
+
+    | Roles    |
+----|----------|-----
+PK  | id_rol   | int
+    | rol_type | str
+
+    | Credentials   |
+----|---------------|----- 
+Pk  | id_credential | int
+    | service_name  | str
+    | service_pass  | str
+    | access_level  | str
+FK  | id_usr        | int
+
+   | Access        |
+---|---------------|------ 
+PK | id_access     | int
+   | timestam      | date
+   | motivo        | str
+FK | id_usr        | int
+FK | id_credential | int

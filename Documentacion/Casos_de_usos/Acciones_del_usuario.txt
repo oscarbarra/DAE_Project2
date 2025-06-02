@@ -1,0 +1,20 @@
+
+Usuario
+.registrarse
+.iniciar sesión 
+--> include: validar datos del usuario
+.ver perfil
+-->extend:actualizar perfil
+---->extend:cambiar correo
+---->extend:cambiar nombre de usuario
+---->extend: cambiar contraseña de autentifiación
+.guardar credencial
+.eliminar credencial
+.ver credencial
+-->extend: acceder a credencial compartida
+-->extend: compartir credencial
+---->include: validar envio con la contraseña secreta
+
+Administrador
+.administrar usuarios
+.administrar roles
