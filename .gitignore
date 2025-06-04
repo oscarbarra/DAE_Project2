@@ -1,0 +1,17 @@
+
+# Entorno virtual
+venv/
+.venv/
+
+# Archivos de entorno con variables sensibles
+.env
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Archivos de sistema
+.DS_Store
+
+# Otros archivos temporales
+*.log
