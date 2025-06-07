@@ -85,6 +85,16 @@ def init_db(nombre_bd="instance/ClaveForte.db"):
     );
     """)
 
+    # Insertar roles si no existen
+    cursor.execute("SELECT COUNT(*) FROM Roles")
+    total_roles = cursor.fetchone()[0]
+
+    if total_roles == 0:
+        cursor.executemany("INSERT INTO Roles (rol_type) VALUES (?)", [
+            ("administrador",),
+            ("usuario",)
+        ])
+
     conexion.commit()
     conexion.close()
 
