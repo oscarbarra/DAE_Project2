@@ -28,6 +28,7 @@ def login():
         if usuario:
             id_usr, usr_name, usr_pass = usuario
             if usr_pass == contraseña:
+                # session: utiliza coockies para guardar la info del usuario
                 session['usuario_id'] = id_usr
                 session['usuario_nombre'] = usr_name
                 return redirect(url_for('home'))
