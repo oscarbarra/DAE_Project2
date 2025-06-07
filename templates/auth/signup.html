@@ -8,18 +8,20 @@
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
         <h2 class="text-2xl font-bold mb-6 text-center">Crear Cuenta</h2>
+        <!-- Formaulario -->
         <form action="/signup" method="POST" class="space-y-4">
             <input type="text" name="nombre" placeholder="Nombre" class="w-full p-2 border rounded-xl">
-            <input type="text" name="rut" placeholder="RUT" class="w-full p-2 border rounded-xl">
+            <input type="text" name="rut" placeholder="Correo" class="w-full p-2 border rounded-xl">
             <input type="password" name="password" placeholder="Contraseña" class="w-full p-2 border rounded-xl">
             <select name="rol" class="w-full p-2 border rounded-xl">
                 <option value="usuario">Usuario</option>
-                <option value="jefe">Jefe</option>
+                <option value="jefe">Administrador</option>
             </select>
-            <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700">
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700">
                 Registrarse
             </button>
         </form>
+        <!-- Enlace al login -->
         <p class="text-sm text-center mt-4">
             ¿Ya tienes cuenta?
             <a href="/login" class="text-blue-600 hover:underline">Inicia sesión</a>
