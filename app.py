@@ -1,4 +1,3 @@
-from flask import Flask, render_template, redirect, url_for, request, session
 
 import os
 import sqlite3
@@ -7,9 +6,7 @@ from models import init_db
 from flask import Flask,render_template,redirect,url_for,request,session,flash
 
 app = Flask(__name__)
-app.secret_key = 'clave_super_secreta_123'
-# Más adelante debemos proteger esta clave
-app.secret_key = '2SE276tTtdtvG5mztVk53xw3TCPZ4GvL'
+app.secret_key = os.getenv("SECRET_KEY")
 
 @app.route('/')
 def index():
@@ -70,20 +67,22 @@ def signup():
 def home():
     return render_template('/home/home.html')
 
-@app.route('/mis-credenciales')
-def mis_credenciales():
+@app.route('/credentials')
+def credentials():
     usuario_id = session.get('usuario_id')
-    if not usuario_id:
-        return redirect(url_for('login'))
 
-    conn = sqlite3.connect('instance/database.db')
+    conn = sqlite3.connect('instance/ClaveForte.db')
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    cur.execute("SELECT * FROM credenciales WHERE usuario_id = ?", (usuario_id,))
+    cur.execute("SELECT * FROM Credentials WHERE id_usr = ?", (usuario_id,))
     credenciales = cur.fetchall()
     conn.close()
 
-    return render_template('mis_credenciales.html', credenciales=credenciales)
+    return render_template('/credentials/credentials.html', credenciales=credenciales)
+
+@app.route('/share_credential')
+def share():
+    return render_template('/share_credential/share.html')
 
 if __name__ == '__main__':
     # --- Crea la bd si no existe -----
