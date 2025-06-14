@@ -1,12 +1,14 @@
-
-import os
+from flask import Flask,render_template,redirect,url_for,request,session,flash
 import sqlite3
+import os
 from datetime import datetime
 from models import init_db
-from flask import Flask,render_template,redirect,url_for,request,session,flash
+from dotenv import load_dotenv
+
+load_dotenv()  # Carga las variables del archivo .env
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY")
+app.secret_key = os.getenv('SECRET_KEY')
 
 @app.route('/')
 def index():
@@ -92,3 +94,25 @@ if __name__ == '__main__':
 
     # --- Aplicación ------------------
     app.run(debug=True)
+
+@app.route('/agregar-credencial', methods=['POST'])
+def agregar_credencial():
+    usuario_id = session.get('usuario_id')
+    if not usuario_id:
+        return redirect('/login')
+
+    servicio = request.form['servicio']
+    usuario = request.form['usuario']
+    contrasena = request.form['contrasena']
+
+    conn = sqlite3.connect('instance/database.db')
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO credenciales (usuario_id, servicio, usuario, contrasena)
+        VALUES (?, ?, ?, ?)
+    """, (usuario_id, servicio, usuario, contrasena))
+    conn.commit()
+    conn.close()
+
+    return redirect('/mis-credenciales')
+
