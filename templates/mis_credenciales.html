@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Credenciales</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-3xl mx-auto mt-10 p-6 bg-white rounded-xl shadow">
+        <h2 class="text-2xl font-bold mb-4">Mis Credenciales</h2>
+        <!-- Aquí se listarán con Flask -->
+        <ul>
+            {% for cred in credenciales %}
+            <li class="border-b py-2">
+                <strong>{{ cred.servicio }}</strong><br>
+                Usuario: {{ cred.usuario_servicio }}<br>
+                Contraseña: {{ cred.contraseña }}
+            </li>
+            {% else %}
+            <p class="text-gray-500">No tienes credenciales registradas.</p>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
