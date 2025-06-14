@@ -3,13 +3,11 @@ import sqlite3
 import os
 from datetime import datetime
 from models import init_db
-from dotenv import load_dotenv
-
-load_dotenv()  # Carga las variables del archivo .env
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 
+# ------- Autentificación -------
 @app.route('/')
 def index():
     return redirect(url_for('/auth/login'))
@@ -65,10 +63,12 @@ def signup():
         return redirect(url_for('login'))
     return render_template('/auth/signup.html')
 
+# ------- Pagina de Inicio -------
 @app.route('/home')
 def home():
     return render_template('/home/home.html')
 
+# ------- Credenciales -------
 @app.route('/credentials')
 def credentials():
     usuario_id = session.get('usuario_id')
@@ -82,10 +82,30 @@ def credentials():
 
     return render_template('/credentials/credentials.html', credenciales=credenciales)
 
+@app.route('/add_credential', methods=['GET','POST'])
+def agregar_credencial():
+    id_usr = session.get('usuario_id')
+    service_name  = request.form['servicio']
+    service_owner = request.form['usuario']
+    service_pass  = request.form['contrasena']
+    access_level  = 1
+
+    conn = sqlite3.connect('instance/ClaveForte.db')
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO Credentials (service_name, service_pass, access_level, id_usr)
+        VALUES (?, ?, ?, ?)
+    """, (service_name, service_pass, access_level,id_usr))
+    conn.commit()
+    conn.close()
+
+    return redirect('/credentials')
+
 @app.route('/share_credential')
 def share():
     return render_template('/share_credential/share.html')
 
+# ------- Aplicación General -------
 if __name__ == '__main__':
     # --- Crea la bd si no existe -----
     db_path = 'instance/ClaveForte.db'
@@ -94,25 +114,3 @@ if __name__ == '__main__':
 
     # --- Aplicación ------------------
     app.run(debug=True)
-
-@app.route('/agregar-credencial', methods=['POST'])
-def agregar_credencial():
-    usuario_id = session.get('usuario_id')
-    if not usuario_id:
-        return redirect('/login')
-
-    servicio = request.form['servicio']
-    usuario = request.form['usuario']
-    contrasena = request.form['contrasena']
-
-    conn = sqlite3.connect('instance/database.db')
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO credenciales (usuario_id, servicio, usuario, contrasena)
-        VALUES (?, ?, ?, ?)
-    """, (usuario_id, servicio, usuario, contrasena))
-    conn.commit()
-    conn.close()
-
-    return redirect('/mis-credenciales')
-
