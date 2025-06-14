@@ -1,3 +1,4 @@
+from flask import Flask, render_template, redirect, url_for, request, session
 
 import os
 import sqlite3
@@ -6,6 +7,7 @@ from models import init_db
 from flask import Flask,render_template,redirect,url_for,request,session,flash
 
 app = Flask(__name__)
+app.secret_key = 'clave_super_secreta_123'
 # Más adelante debemos proteger esta clave
 app.secret_key = '2SE276tTtdtvG5mztVk53xw3TCPZ4GvL'
 
@@ -67,6 +69,21 @@ def signup():
 @app.route('/home')
 def home():
     return render_template('/home/home.html')
+
+@app.route('/mis-credenciales')
+def mis_credenciales():
+    usuario_id = session.get('usuario_id')
+    if not usuario_id:
+        return redirect(url_for('login'))
+
+    conn = sqlite3.connect('instance/database.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM credenciales WHERE usuario_id = ?", (usuario_id,))
+    credenciales = cur.fetchall()
+    conn.close()
+
+    return render_template('mis_credenciales.html', credenciales=credenciales)
 
 if __name__ == '__main__':
     # --- Crea la bd si no existe -----
