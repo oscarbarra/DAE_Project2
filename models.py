@@ -66,7 +66,8 @@ def init_db(nombre_bd="instance/ClaveForte.db"):
         id_credential   INTEGER PRIMARY KEY AUTOINCREMENT,
         service_name    TEXT NOT NULL,
         service_pass    TEXT NOT NULL,
-        access_level    TEXT,
+        users_allows    TEXT,
+        name_owner      TEXT,
         id_usr          INTEGER NOT NULL,
         FOREIGN KEY (id_usr) REFERENCES Users(id_usr)
     );
