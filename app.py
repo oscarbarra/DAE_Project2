@@ -3,9 +3,12 @@ import os
 import json
 import sqlite3
 from datetime import datetime
+from dotenv import load_dotenv
 from flask import Flask,render_template,redirect,url_for,request,session,flash
 
 from models import init_db
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
@@ -214,4 +217,4 @@ if __name__ == '__main__':
         init_db(db_path)
 
     # --- Aplicación ------------------
-    app.run(debug=True)
+    app.run()

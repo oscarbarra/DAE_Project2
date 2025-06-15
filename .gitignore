@@ -1,9 +1,10 @@
 
-# Entorno virtual
+# Entorno virtual (si usas venv)
 venv/
-.venv/
+ENV/
+env/
 
-# Archivos de entorno con variables sensibles
+# Archivos de configuración sensible
 .env
 
 # Python bytecode
