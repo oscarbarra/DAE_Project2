@@ -1,0 +1,13 @@
+
+services:
+  - type: web
+    name: flask-claveforte
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        sync: false
+      - key: FLASK_ENV
+        value: production
+    plan: free
