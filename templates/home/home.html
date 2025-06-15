@@ -1,17 +1,36 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <title>Probando Flask</title>
-</head>
-<body>
-    <div>
-        <h1 class="text-4xl">Bienvenido a ClaveForte</h1>
-        <ul class="list-disc pl-5">
-            <li> <a class="text-blue-500" href="credentials">mis - credenciales</a> </li>
-        </ul>
+
+{% extends './layout.html' %}
+
+{% block content %}
+<!-- Contenido principal -->
+<div class="flex-1 p-10">
+    <h1 class="text-3xl font-bold mb-4">Bienvenido a ClaveForte</h1>
+    <p class="text-gray-600">
+        Desde aquí puedes gestionar tus credenciales y compartirlas con otros usuarios de forma segura.
+    </p>
+
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Widget de Mis Credenciales -->
+        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
+        <h2 class="text-xl font-semibold mb-2">Ver Credenciales</h2>
+        <p class="text-gray-600 mb-4">
+            Consulta y administra tus credenciales guardadas.
+        </p>
+        <a href="/credentials" class="text-indigo-600 font-semibold hover:underline">
+            Ir a Mis Credenciales →
+        </a>
+        </div>
+
+        <!-- Widget de Compartir -->
+        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
+        <h2 class="text-xl font-semibold mb-2">Compartir</h2>
+        <p class="text-gray-600 mb-4">
+            Comparte una credencial con otro usuario mediante una clave segura.
+        </p>
+        <a href="/credentials" class="text-indigo-600 font-semibold hover:underline">
+            Ir a Compartir →
+        </a>
+        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
