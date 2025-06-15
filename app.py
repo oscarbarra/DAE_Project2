@@ -71,6 +71,13 @@ def signup():
 def home():
     return render_template('/home/home.html')
 
+# ------- Login -------
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/login')
+
+
 # ------- Credenciales -------
 @app.route('/credentials')
 def credenciales():
