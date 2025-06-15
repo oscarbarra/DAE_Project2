@@ -125,9 +125,6 @@ def agregar_credencial():
 
     return redirect('/credentials')
 
-from flask import request, session, render_template, redirect, url_for, flash
-import sqlite3
-
 @app.route('/share_credential', methods=['GET', 'POST'])
 def compartir_credencial():
     if request.method == 'POST':
