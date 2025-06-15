@@ -66,17 +66,16 @@ def signup():
         return redirect(url_for('login'))
     return render_template('/auth/signup.html')
 
-# ------- Pagina de Inicio -------
-@app.route('/home')
-def home():
-    return render_template('/home/home.html')
-
-# ------- Login -------
+# ------- Logout -------
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/login')
 
+# ------- Pagina de Inicio -------
+@app.route('/home')
+def home():
+    return render_template('/home/home.html')
 
 # ------- Credenciales -------
 @app.route('/credentials')
