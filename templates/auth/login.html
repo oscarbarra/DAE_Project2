@@ -8,19 +8,44 @@
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
         <h2 class="text-2xl font-bold mb-6 text-center">Iniciar Sesión</h2>
+        
         <!-- Formulario -->
         <form action="/login" method="POST" class="space-y-4">
-            <input type="email" name="email" placeholder="Correo" class="w-full p-2 border rounded-xl">
-            <input type="password" name="password" placeholder="Contraseña" class="w-full p-2 border rounded-xl">
+            <input type="email" id="email" name="email" placeholder="Correo" class="w-full p-2 border rounded-xl">
+            <input type="password" id="password" name="password" placeholder="Contraseña" class="w-full p-2 border rounded-xl">
+            
+            <!-- Checkbox para ingresar como invitado -->
+            <div class="flex items-center space-x-2">
+            <input type="checkbox" id="modo-invitado" class="accent-blue-600">
+            <label for="modo-invitado" class="text-sm text-gray-700">Ingresar como invitado</label>
+            </div>
+
             <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700">
-                Entrar
+            Entrar
             </button>
         </form>
-        <!-- Enlace al signup-->
+
+        <!-- Enlace al signup -->
         <p class="text-sm text-center mt-4">
             ¿No tienes cuenta?
             <a href="/signup" class="text-blue-600 hover:underline">Regístrate</a>
         </p>
     </div>
 </body>
+
+<script>
+  const invitadoCheckbox = document.getElementById('modo-invitado');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+
+  invitadoCheckbox.addEventListener('change', () => {
+    if (invitadoCheckbox.checked) {
+        emailInput.value = 'invitado@gmail.com';
+        passwordInput.value = '1234';
+    } else {
+        emailInput.value = '';
+        passwordInput.value = '';
+    }
+  });
+</script>
 </html>
