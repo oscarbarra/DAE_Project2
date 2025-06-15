@@ -1,38 +1,9 @@
 
 import os
 import sqlite3
+from datetime import datetime
 
-def crear_base_datos():
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-
-    # Tabla de usuarios
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            rut TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            rol TEXT NOT NULL
-        )
-    ''')
-
-    # Tabla de credenciales
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS credenciales (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            usuario_id INTEGER NOT NULL,
-            servicio TEXT NOT NULL,
-            usuario_servicio TEXT NOT NULL,
-            contraseña TEXT NOT NULL,
-            FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
-        )
-    ''')
-
-    conn.commit()
-    conn.close()
-
-def init_db(nombre_bd="instance/ClaveForte.db"):
+def make_db(nombre_bd="instance/ClaveForte.db"):
     os.makedirs(os.path.dirname(nombre_bd), exist_ok=True)
     
     conexion = sqlite3.connect(nombre_bd)
@@ -85,7 +56,11 @@ def init_db(nombre_bd="instance/ClaveForte.db"):
         FOREIGN KEY (id_credential) REFERENCES Credentials(id_credential)
     );
     """)
+    return
 
+def init_table_roles(nombre_bd="instance/ClaveForte.db"):
+    conexion = sqlite3.connect(nombre_bd)
+    cursor = conexion.cursor()
     # Insertar roles si no existen
     cursor.execute("SELECT COUNT(*) FROM Roles")
     total_roles = cursor.fetchone()[0]
@@ -98,7 +73,28 @@ def init_db(nombre_bd="instance/ClaveForte.db"):
 
     conexion.commit()
     conexion.close()
+    return
+
+def init_table_users(nombre_bd="instance/ClaveForte.db"):
+    conexion = sqlite3.connect(nombre_bd)
+    cursor = conexion.cursor()
+    # Insertar usuarios basicos si no existen
+    cursor.execute("SELECT COUNT(*) FROM Users")
+    total_users = cursor.fetchone()[0]
+    if total_users == 0:
+        cursor.execute("INSERT INTO Users (usr_name, usr_mail, usr_pass, secret_pass, last_login, id_rol)\
+                        VALUES (?,?,?,?,?,?)",
+                        ("invitado","invitado@gmail.com", 1234, 1234, str(datetime.now()), 2))
+    conexion.commit()
+    conexion.close()
+    return
+
+def init_db(nombre_bd="instance/ClaveForte.db"):
+    make_db(nombre_bd="instance/ClaveForte.db")
+    init_table_roles(nombre_bd="instance/ClaveForte.db")
+    init_table_users(nombre_bd="instance/ClaveForte.db")
+    return
 
 # Ejecuta esta función una sola vez para crear la base
 if __name__ == '__main__':
-    init_db()
+    init_db(nombre_bd="instance/ClaveForte.db")
