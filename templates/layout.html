@@ -3,10 +3,11 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>{% block title %}Panel{% endblock %}</title>
+  <title>ClaveForte</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="flex">
+<body class="flex overflow-y-hidden h-screen">
+
   {% include './sidebar/sidebar.html' %}
   
   <main class="flex-1 p-10">
