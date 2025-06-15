@@ -13,7 +13,7 @@ app.secret_key = os.getenv('SECRET_KEY')
 # ------- Autentificación -------
 @app.route('/')
 def index():
-    return redirect(url_for('/auth/login'))
+    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET','POST'])
 def login():
