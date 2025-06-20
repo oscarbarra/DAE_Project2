@@ -75,11 +75,16 @@ def logout():
 # ------- Pagina de Inicio -------
 @app.route('/home')
 def home():
+    if (not session):
+        return redirect("login")
     return render_template('/home/home.html')
 
 # ------- Credenciales -------
 @app.route('/credentials')
 def credenciales():
+    if (not session):
+        return redirect("login")
+    
     usuario_id = session.get('usuario_id')
 
     conn = sqlite3.connect('instance/ClaveForte.db')
@@ -103,30 +108,33 @@ def credenciales():
                     credenciales.append(c)
             except (json.JSONDecodeError, TypeError):
                 continue  # evitar errores si el JSON está mal formado o vacío
-
     return render_template('/credentials/credentials.html', credenciales=credenciales, usuario_actual=usuario_id)
 
 @app.route('/add_credential', methods=['GET','POST'])
 def agregar_credencial():
-    id_usr = session.get('usuario_id')
-    service_name  = request.form['servicio']
-    service_pass  = request.form['contrasena']
-    users_allows  = json.dumps([])
-    name_owner    = session.get('usuario_nombre')
+    if (not session):
+        return redirect("login")
+    if request.method == 'POST':
+        id_usr = session.get('usuario_id')
+        service_name  = request.form['servicio']
+        service_pass  = request.form['contrasena']
+        users_allows  = json.dumps([])
+        name_owner    = session.get('usuario_nombre')
 
-    conn = sqlite3.connect('instance/ClaveForte.db')
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO Credentials (service_name, service_pass, users_allows, name_owner, id_usr)
-        VALUES (?, ?, ?, ?, ?)
-    """, (service_name, service_pass, users_allows,name_owner, id_usr))
-    conn.commit()
-    conn.close()
-
+        conn = sqlite3.connect('instance/ClaveForte.db')
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO Credentials (service_name, service_pass, users_allows, name_owner, id_usr)
+            VALUES (?, ?, ?, ?, ?)
+        """, (service_name, service_pass, users_allows,name_owner, id_usr))
+        conn.commit()
+        conn.close()
     return redirect('/credentials')
 
 @app.route('/share_credential', methods=['GET', 'POST'])
 def compartir_credencial():
+    if (not session):
+        return redirect("login")
     if request.method == 'POST':
         # 1. Obtener datos del formulario y de sesión
         id_owner = session.get('usuario_id')
@@ -193,8 +201,7 @@ def compartir_credencial():
 
         flash("Credencial compartida exitosamente.", "success")
         return redirect(url_for('compartir_credencial'))
-    
-    else:
+    if request.method == 'GET':
         usuario_id = session.get('usuario_id')
         # Mostrar formulario con credenciales propias
         conn = sqlite3.connect('instance/ClaveForte.db')
