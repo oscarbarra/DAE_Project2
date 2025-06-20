@@ -16,8 +16,13 @@
             
             <!-- Checkbox para ingresar como invitado -->
             <div class="flex items-center space-x-2">
-            <input type="checkbox" id="modo-invitado" class="accent-blue-600">
-            <label for="modo-invitado" class="text-sm text-gray-700">Ingresar como invitado</label>
+                <input type="checkbox" id="modo-invitado" class="accent-blue-600">
+                <label for="modo-invitado" class="text-sm text-gray-700">Ingresar como invitado</label>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <input type="checkbox" id="modo-admin" class="accent-blue-600">
+                <label for="modo-invitado" class="text-sm text-gray-700">Ingresar como administrador</label>
             </div>
 
             <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700">
@@ -35,6 +40,7 @@
 
 <script>
   const invitadoCheckbox = document.getElementById('modo-invitado');
+  const adminCheckbox = document.getElementById('modo-admin');
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
 
@@ -45,7 +51,15 @@
     } else {
         emailInput.value = '';
         passwordInput.value = '';
-    }
-  });
+    }});
+
+  adminCheckbox.addEventListener('change', () => {
+    if (adminCheckbox.checked) {
+        emailInput.value = 'admin@gmail.com';
+        passwordInput.value = '1234';
+    } else {
+        emailInput.value = '';
+        passwordInput.value = '';
+    }});
 </script>
 </html>
