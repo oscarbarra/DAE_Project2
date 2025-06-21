@@ -24,16 +24,17 @@ def login():
 
         conexion = sqlite3.connect('instance/ClaveForte.db')
         cursor = conexion.cursor()
-        cursor.execute("SELECT id_usr, usr_name, usr_pass, id_rol FROM Users WHERE usr_mail = ?", (correo,))
+        cursor.execute("SELECT id_usr, usr_name, usr_mail, usr_pass, id_rol FROM Users WHERE usr_mail = ?", (correo,))
         usuario = cursor.fetchone()
         conexion.close()
 
         if usuario:
-            id_usr, usr_name, usr_pass, id_rol = usuario
+            id_usr, usr_name, usr_mail, usr_pass, id_rol = usuario
             if usr_pass == contraseña:
                 # session: utiliza coockies para guardar la info del usuario
                 session['usuario_id'] = id_usr
                 session['usuario_nombre'] = usr_name
+                session['usuario_correo'] = usr_mail
                 session['usuario_rol'] = id_rol
                 return redirect(url_for('home'))
             else:
@@ -231,9 +232,39 @@ def compartir_credencial():
 def gestionar_usuarios():
     if (not session):
         return redirect("login")
+    if (request.method == "POST"):
+        method = request.form.get('_method')
+        if method == 'UPDATE':
+            print('u')
+        elif method == 'DELETE':
+            # obtener el id enviado desde el formulario
+            id_usuario = request.form.get('id_usuario')
+            conn = sqlite3.connect('instance/ClaveForte.db')
+            cur = conn.cursor()
+            cur.execute("DELETE FROM Users WHERE id_usr = ?", (id_usuario,))
+            conn.commit()
+            conn.close()
+    
     rol = session.get('usuario_rol')
+    # Todos los Usuarios registrados en el sistema
+    usuario_logeado_email = session.get('usuario_correo')
+    # Lista de correos a ignorar
+    correos_a_ignorar = ["admin@gmail.com", "invitado@gmail.com", usuario_logeado_email]
+    # Conexión segura
+    conn = sqlite3.connect('instance/ClaveForte.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    # Prepara los placeholders (?) para la cantidad de correos
+    placeholders = ', '.join(['?'] * len(correos_a_ignorar))
+    # Ejecuta la consulta excluyendo los correos
+    cur.execute(f"""SELECT * FROM Users WHERE usr_mail NOT IN ({placeholders})""",
+                correos_a_ignorar)
+    usuarios = cur.fetchall()
+    conn.close()
     return render_template('./admin/management/management.html',
-                           usr_rol = rol)
+                           usr_rol = rol,
+                           users = usuarios)
+
 # ------- Aplicación General -------
 if __name__ == '__main__':
     # --- Crea la bd si no existe -----
