@@ -82,9 +82,12 @@ def init_table_users(nombre_bd="instance/ClaveForte.db"):
     cursor.execute("SELECT COUNT(*) FROM Users")
     total_users = cursor.fetchone()[0]
     if total_users == 0:
-        cursor.execute("INSERT INTO Users (usr_name, usr_mail, usr_pass, secret_pass, last_login, id_rol)\
-                        VALUES (?,?,?,?,?,?)",
-                        ("invitado","invitado@gmail.com", 1234, 1234, str(datetime.now()), 2))
+        date = str(datetime.now())
+        cursor.executemany("INSERT INTO Users (usr_name, usr_mail, usr_pass, secret_pass, last_login, id_rol)\
+                        VALUES (?,?,?,?,?,?)", [
+                        ("admin","admin@gmail.com", 1234, 1234, date, 1),
+                        ("invitado","invitado@gmail.com", 1234, 1234, date, 2)
+                        ])
     conexion.commit()
     conexion.close()
     return
