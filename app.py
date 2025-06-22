@@ -3,6 +3,8 @@ import os
 import json
 import sqlite3
 from datetime import datetime
+from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask,render_template,redirect,url_for,request,session,flash
 
 from models import init_db
@@ -30,7 +32,7 @@ def login():
 
         if usuario:
             id_usr, usr_name, usr_mail, usr_pass, id_rol = usuario
-            if usr_pass == contraseña:
+            if check_password_hash(usr_pass, contraseña):
                 # session: utiliza coockies para guardar la info del usuario
                 session['usuario_id'] = id_usr
                 session['usuario_nombre'] = usr_name
@@ -48,8 +50,10 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         email    = request.form['email']
-        password = request.form['password']
-        secret   = request.form['password']
+        password_plano = request.form['password']
+        password = generate_password_hash(password_plano)
+        secret = generate_password_hash(password_plano) 
+
         created  = str(datetime.now())
         rol      = request.form['rol']
 
