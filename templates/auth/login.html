@@ -1,51 +1,71 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Iniciar Sesión</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <title>Iniciar Sesión</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
-        <h2 class="text-2xl font-bold mb-6 text-center">Iniciar Sesión</h2>
-        
-        <!-- Formulario -->
-        <form action="/login" method="POST" class="space-y-4">
-            <input type="email" id="email" name="email" placeholder="Correo" class="w-full p-2 border rounded-xl">
-            <input type="password" id="password" name="password" placeholder="Contraseña" class="w-full p-2 border rounded-xl">
-            
-            <!-- Checkbox para ingresar como invitado -->
-            <div class="flex items-center space-x-2">
-            <input type="checkbox" id="modo-invitado" class="accent-blue-600">
-            <label for="modo-invitado" class="text-sm text-gray-700">Ingresar como invitado</label>
-            </div>
+  <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
+    <h2 class="text-2xl font-bold mb-6 text-center">Iniciar Sesión</h2>
 
-            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700">
-            Entrar
-            </button>
-        </form>
+    <!-- Formulario -->
+    <form action="/login" method="POST" class="space-y-4">
+      <input type="email" id="email" name="email" placeholder="Correo" class="w-full p-2 border rounded-xl">
+      <input type="password" id="password" name="password" placeholder="Contraseña" class="w-full p-2 border rounded-xl">
 
-        <!-- Enlace al signup -->
-        <p class="text-sm text-center mt-4">
-            ¿No tienes cuenta?
-            <a href="/signup" class="text-blue-600 hover:underline">Regístrate</a>
-        </p>
-    </div>
+      <!-- Selector de modo -->
+      <div>
+        <p class="text-sm text-gray-700 mb-1">Entrar como:</p>
+        <div class="flex space-x-4">
+          <label class="flex items-center space-x-2">
+            <input type="radio" name="modo" value="ninguno" class="accent-gray-400" checked>
+            <span class="text-sm text-gray-700">Normal</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input type="radio" name="modo" value="invitado" class="accent-blue-600">
+            <span class="text-sm text-gray-700">Invitado</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input type="radio" name="modo" value="admin" class="accent-red-600">
+            <span class="text-sm text-gray-700">Administrador</span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700">
+        Entrar
+      </button>
+    </form>
+
+    <!-- Enlace al signup -->
+    <p class="text-sm text-center mt-4">
+      ¿No tienes cuenta?
+      <a href="/signup" class="text-blue-600 hover:underline">Regístrate</a>
+    </p>
+  </div>
+
+  <script>
+    localStorage.clear();
+
+    const modoRadios = document.querySelectorAll('input[name="modo"]');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+
+    modoRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.value === 'invitado') {
+          emailInput.value = 'invitado@gmail.com';
+          passwordInput.value = '1234';
+        } else if (radio.value === 'admin') {
+          emailInput.value = 'admin@gmail.com';
+          passwordInput.value = '1234';
+        } else {
+          emailInput.value = '';
+          passwordInput.value = '';
+        }
+      });
+    });
+  </script>
 </body>
-
-<script>
-  const invitadoCheckbox = document.getElementById('modo-invitado');
-  const emailInput = document.getElementById('email');
-  const passwordInput = document.getElementById('password');
-
-  invitadoCheckbox.addEventListener('change', () => {
-    if (invitadoCheckbox.checked) {
-        emailInput.value = 'invitado@gmail.com';
-        passwordInput.value = '1234';
-    } else {
-        emailInput.value = '';
-        passwordInput.value = '';
-    }
-  });
-</script>
 </html>

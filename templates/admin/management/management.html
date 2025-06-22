@@ -1,0 +1,141 @@
+
+{% extends './layout.html' %}
+
+{% block content %}
+
+<div class="flex h-screen gap-8 px-6 py-4 box-border">
+  <!-- Formulario para modificar/eliminar usuario -->
+  <div class="w-full max-w-md bg-white p-6 rounded-lg shadow-md overflow-y-auto">
+    <h2 class="text-xl font-semibold mb-4 text-indigo-600">Datos del Usuario</h2>
+    <form id="form-usuario" action="/user_management" method="POST" class="space-y-4">
+      <!-- ID del Usuario (oculto) -->
+      <input type="hidden" id="id_usuario" name="id_usuario" value="">
+
+      <!-- Campo oculto para definir el método simulado -->
+      <input type="hidden" id="_method" name="_method" value="">
+
+      <!-- Nombre del Usuario -->
+      <div>
+        <label class="block text-sm font-medium">Nombre del Usuario</label>
+        <input type="text" id="nombre_usuario" name="nombre_usuario" required
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400">
+      </div>
+
+      <!-- Correo del Usuario -->
+      <div>
+        <label class="block text-sm font-medium">Correo del Usuario</label>
+        <input type="email" id="correo_usuario" name="correo_usuario" required
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400">
+      </div>
+
+      <!-- Rol del Usuario -->
+      <div>
+        <label class="block text-sm font-medium">Rol del Usuario</label>
+        <input type="text" id="rol_usuario" name="rol_usuario" required
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400">
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="flex gap-4 pt-2">
+        <button type="submit"
+                onclick="setMethod('UPDATE')"
+                class="flex-1 bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition">
+          Modificar Usuario
+        </button>
+        <button type="submit"
+                onclick="setMethod('DELETE')"
+                class="flex-1 bg-red-600 text-white py-2 rounded hover:bg-red-700 transition">
+          Eliminar Usuario
+        </button>
+      </div>
+    </form>
+
+  </div>
+
+  <!-- Lista de Usuarios Registrados -->
+  <div class="flex-1 bg-white p-6 m-y-10 rounded-lg shadow-md flex flex-col">
+    <h2 class="text-xl font-semibold mb-4 text-indigo-600">Usuarios registrados en el sistema</h2>
+    <div class="flex-1 overflow-y-auto space-y-4 pr-1">
+      {% if users %}
+        <div id="usuarios-container">
+        {% for u in users %}
+          <div
+            id="usuario-{{ u.id_usr }}"
+            class="usuario p-4 mb-4 border rounded bg-white shadow-sm cursor-pointer"
+            data-nombre="{{ u.usr_name }}"
+            data-correo="{{ u.usr_mail }}"
+            data-rol="{{ u.id_rol }}"
+            data-id="{{ u.id_usr }}"
+          >
+            <p class="font-semibold text-lg">{{ u.usr_name }}</p>
+            <p class="text-sm text-gray-600">Correo: {{ u.usr_mail }}</p>
+            <p class="text-sm text-gray-600">
+              Rol:
+              {% if u.id_rol == 1 %}
+                Administrador
+              {% elif u.id_rol == 2 %}
+                Usuario
+              {% else %}
+                Desconocido
+              {% endif %}
+            </p>
+          </div>
+        {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-gray-500">No hay usuarios registrados en el sistema.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  function setMethod(method) {
+    document.getElementById('_method').value = method;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const usuarios = document.querySelectorAll(".usuario");
+
+    // Restaurar selección desde localStorage
+    const usuarioGuardado = localStorage.getItem("usuarioSeleccionado");
+    if (usuarioGuardado) {
+      const seleccionado = document.getElementById("usuario-" + usuarioGuardado);
+      if (seleccionado) {
+        seleccionado.classList.add("bg-indigo-50", "border-indigo-500", "ring-2", "ring-indigo-200");
+      }
+    }
+
+    usuarios.forEach((usuario) => {
+      usuario.addEventListener("click", () => {
+        // Quitar selección previa
+        usuarios.forEach((u) => u.classList.remove("bg-indigo-50", "border-indigo-500", "ring-2", "ring-indigo-200"));
+
+        // Aplicar selección actual
+        usuario.classList.add("bg-indigo-50", "border-indigo-500", "ring-2", "ring-indigo-200");
+
+        // Guardar ID seleccionado
+        const id = usuario.dataset.id;
+        localStorage.setItem("usuarioSeleccionado", id);
+
+        // Rellenar formulario
+        const nombre = usuario.dataset.nombre;
+        const correo = usuario.dataset.correo;
+        const rolId = usuario.dataset.rol;
+
+        let rolTexto = "Desconocido";
+        if (rolId === "1") rolTexto = "Administrador";
+        else if (rolId === "2") rolTexto = "Usuario";
+
+        document.getElementById("id_usuario").value = id;
+        document.getElementById("nombre_usuario").value = nombre;
+        document.getElementById("correo_usuario").value = correo;
+        document.getElementById("rol_usuario").value = rolTexto;
+      });
+    });
+  });
+
+</script>
+
+
+{% endblock %}

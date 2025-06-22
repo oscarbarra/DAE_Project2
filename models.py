@@ -2,6 +2,7 @@
 import os
 import sqlite3
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 def make_db(nombre_bd="instance/ClaveForte.db"):
     os.makedirs(os.path.dirname(nombre_bd), exist_ok=True)
@@ -81,10 +82,14 @@ def init_table_users(nombre_bd="instance/ClaveForte.db"):
     # Insertar usuarios basicos si no existen
     cursor.execute("SELECT COUNT(*) FROM Users")
     total_users = cursor.fetchone()[0]
+    encyrpt_pass = generate_password_hash('1234')
     if total_users == 0:
-        cursor.execute("INSERT INTO Users (usr_name, usr_mail, usr_pass, secret_pass, last_login, id_rol)\
-                        VALUES (?,?,?,?,?,?)",
-                        ("invitado","invitado@gmail.com", 1234, 1234, str(datetime.now()), 2))
+        date = str(datetime.now())
+        cursor.executemany("INSERT INTO Users (usr_name, usr_mail, usr_pass, secret_pass, last_login, id_rol)\
+                        VALUES (?,?,?,?,?,?)", [
+                        ("admin","admin@gmail.com", encyrpt_pass, encyrpt_pass, date, 1),
+                        ("invitado","invitado@gmail.com", encyrpt_pass, encyrpt_pass, date, 2)
+                        ])
     conexion.commit()
     conexion.close()
     return
