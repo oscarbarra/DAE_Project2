@@ -4,7 +4,8 @@ import json
 import sqlite3
 from datetime import datetime
 from flask import Flask,render_template,redirect,url_for,request,session,flash
-
+from werkzeug.security import generate_password_hash
+from datetime import datetime
 from models import init_db
 
 app = Flask(__name__)
@@ -46,8 +47,10 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         email    = request.form['email']
-        password = request.form['password']
-        secret   = request.form['password']
+       password_plano = request.form['password']
+       password = generate_password_hash(password_plano)
+       secret = generate_password_hash(password_plano) 
+
         created  = str(datetime.now())
         rol      = request.form['rol']
 
