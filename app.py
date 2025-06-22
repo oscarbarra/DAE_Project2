@@ -7,6 +7,7 @@ from flask import Flask,render_template,redirect,url_for,request,session,flash
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 from models import init_db
+from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
@@ -30,7 +31,9 @@ def login():
 
         if usuario:
             id_usr, usr_name, usr_pass = usuario
-            if usr_pass == contraseña:
+           from werkzeug.security import check_password_hash
+
+            if check_password_hash(usr_pass, contraseña):
                 # session: utiliza coockies para guardar la info del usuario
                 session['usuario_id'] = id_usr
                 session['usuario_nombre'] = usr_name
