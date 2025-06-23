@@ -151,71 +151,68 @@ def compartir_credencial():
     if (not session):
         return redirect("login")
     if request.method == 'POST':
-        # 1. Obtener datos del formulario y de sesión
+        # 1. Obtener datos del formulario y sesión
         id_owner = session.get('usuario_id')
         id_credencial = request.form.get('id_credential')
         correo_receptor = request.form.get('correo_receptor')
         clave_validacion = request.form.get('pass_validacion')
 
-        # Verificar campos obligatorios
         if not id_owner or not id_credencial or not correo_receptor or not clave_validacion:
             flash("Faltan campos obligatorios.", "danger")
             return redirect(url_for('compartir_credencial'))
 
-        # 2. Conexión a la base de datos
-        conn = sqlite3.connect('instance/ClaveForte.db')
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
-
-        # 3. Verificar existencia del receptor por su correo
-        cur.execute("SELECT id_usr FROM Users WHERE usr_mail = ?", (correo_receptor,))
-        receptor = cur.fetchone()
-        if not receptor:
-            flash("El correo del receptor no está registrado.", "danger")
-            conn.close()
-            return redirect(url_for('compartir_credencial'))
-
-        id_receptor = receptor['id_usr']
-
-        # 4. Verificar clave secundaria del propietario
-        cur.execute("SELECT secret_pass FROM Users WHERE id_usr = ?", (id_owner,))
-        propietario = cur.fetchone()
-        if not propietario or propietario['secret_pass'] != clave_validacion:
-            flash("Clave secundaria incorrecta.", "danger")
-            conn.close()
-            return redirect(url_for('compartir_credencial'))
-
-        # 5. Verificar propiedad de la credencial
-        cur.execute(
-            "SELECT users_allows FROM Credentials WHERE id_credential = ? AND id_usr = ?",
-            (id_credencial, id_owner)
-        )
-        credencial = cur.fetchone()
-        if not credencial:
-            flash("No se encontró la credencial o no eres su propietario.", "danger")
-            conn.close()
-            return redirect(url_for('compartir_credencial'))
-
-        # 6. Convertir lista de usuarios permitidos desde JSON
         try:
-            usuarios_permitidos = json.loads(credencial['users_allows']) if credencial['users_allows'] else []
-        except json.JSONDecodeError:
-            usuarios_permitidos = []
+            with sqlite3.connect('instance/ClaveForte.db') as conn:
+                conn.row_factory = sqlite3.Row
+                cur = conn.cursor()
 
-        # 7. Agregar receptor si no está en la lista
-        if id_receptor not in usuarios_permitidos:
-            usuarios_permitidos.append(id_receptor)
+                # Verificar existencia del receptor
+                cur.execute("SELECT id_usr FROM Users WHERE usr_mail = ?", (correo_receptor,))
+                receptor = cur.fetchone()
+                if not receptor:
+                    flash("El correo del receptor no está registrado.", "danger")
+                    return redirect(url_for('compartir_credencial'))
 
-        # 8. Guardar cambios en la base de datos
-        cur.execute(
-            "UPDATE Credentials SET users_allows = ? WHERE id_credential = ?",
-            (json.dumps(usuarios_permitidos), id_credencial)
-        )
-        conn.commit()
-        conn.close()
+                id_receptor = receptor['id_usr']
 
-        flash("Credencial compartida exitosamente.", "success")
-        return redirect(url_for('compartir_credencial'))
+                # Verificar clave secundaria (hash)
+                cur.execute("SELECT secret_pass FROM Users WHERE id_usr = ?", (id_owner,))
+                propietario = cur.fetchone()
+                if not propietario or not check_password_hash(propietario['secret_pass'], clave_validacion):
+                    flash("Clave secundaria incorrecta.", "danger")
+                    return redirect(url_for('compartir_credencial'))
+
+                # Verificar propiedad de la credencial
+                cur.execute(
+                    "SELECT users_allows FROM Credentials WHERE id_credential = ? AND id_usr = ?",
+                    (id_credencial, id_owner)
+                )
+                credencial = cur.fetchone()
+                if not credencial:
+                    flash("No se encontró la credencial o no eres su propietario.", "danger")
+                    return redirect(url_for('compartir_credencial'))
+
+                # Cargar lista de usuarios permitidos
+                try:
+                    usuarios_permitidos = json.loads(credencial['users_allows']) if credencial['users_allows'] else []
+                except json.JSONDecodeError:
+                    usuarios_permitidos = []
+
+                # Agregar receptor si no está en la lista
+                if id_receptor not in usuarios_permitidos:
+                    usuarios_permitidos.append(id_receptor)
+                    cur.execute(
+                        "UPDATE Credentials SET users_allows = ? WHERE id_credential = ?",
+                        (json.dumps(usuarios_permitidos), id_credencial)
+                    )
+                    conn.commit()
+
+            flash("Credencial compartida exitosamente.", "success")
+            return redirect(url_for('compartir_credencial'))
+
+        except sqlite3.Error as e:
+            flash(f"Error en la base de datos: {str(e)}", "danger")
+            return redirect(url_for('compartir_credencial'))
 
     usuario_id = session.get('usuario_id')
     rol = session.get('usuario_rol')
