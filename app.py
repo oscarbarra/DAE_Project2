@@ -276,4 +276,4 @@ if __name__ == '__main__':
         init_db(db_path)
 
     # --- Aplicación ------------------
-    app.run()
+    app.run(debug=True)
