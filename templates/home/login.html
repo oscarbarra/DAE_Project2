@@ -1,24 +1,78 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Iniciar Sesión</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
-        <h2 class="text-2xl font-bold mb-6 text-center">Iniciar Sesión</h2>
-        <form action="/login" method="POST" class="space-y-4">
-            <input type="text" name="rut" placeholder="RUT" class="w-full p-2 border rounded-xl">
-            <input type="password" name="password" placeholder="Contraseña" class="w-full p-2 border rounded-xl">
-            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700">
-                Entrar
-            </button>
-        </form>
-        <p class="text-sm text-center mt-4">
-            ¿No tienes cuenta?
-            <a href="/signup" class="text-blue-600 hover:underline">Regístrate</a>
-        </p>
+{% extends './layout.html' %}
+
+{% block content %}
+<!-- Contenido principal -->
+<div class="flex-1 p-10">
+    <h1 class="text-3xl font-bold mb-4">Bienvenido a ClaveForte</h1>
+    {% if usr_rol == 2 %}
+    <p class="text-gray-600">
+        Desde aquí puedes gestionar tus credenciales y compartirlas con otros usuarios de forma segura. 
+    </p>
+    {% endif %}
+    {% if usr_rol == 1 %}
+    <p class="text-gray-600">
+        Desde aquí puedes gestionar a los usuarios de forma segura. 
+    </p>
+    {% endif %}
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% if usr_rol == 2 %}
+        <!-- Widget de Mis Credenciales -->
+        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
+            <h2 class="text-xl font-semibold mb-2">Ver Credenciales</h2>
+            <p class="text-gray-600 mb-4">
+                Consulta y administra tus credenciales guardadas.
+            </p>
+            <a href="/credentials" class="text-indigo-600 font-semibold hover:underline">
+                Ir a Mis Credenciales →
+            </a>
+        </div>
+
+        <!-- Widget de Compartir -->
+        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
+            <h2 class="text-xl font-semibold mb-2">Compartir</h2>
+            <p class="text-gray-600 mb-4">
+                Comparte una credencial con otro usuario mediante una clave segura.
+            </p>
+            <a href="/share_credential" class="text-indigo-600 font-semibold hover:underline">
+                Ir a Compartir →
+            </a>
+        </div>
+        {% endif %}
+
+        {% if usr_rol == 1 %}
+        <!-- Widget REVISAR Usuarios -->
+         <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
+            <h2 class="text-xl font-semibold mb-2">Ver Usuarios</h2>
+            <p class="text-gray-600 mb-4">
+                Revisa y administra a los usurios del sistema.
+            </p>
+            <a href="/user_management" class="text-indigo-600 font-semibold hover:underline">
+                Ir a Gestionar usuarios →
+            </a>
+        </div>
+
+        <!-- Widget ELIMINAR Usuarios -->
+         <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
+            <h2 class="text-xl font-semibold mb-2">Eliminar usuarios</h2>
+            <p class="text-gray-600 mb-4">
+                Supervisa y elimina usuarios de forma segura.
+            </p>
+            <a href="/user_management" class="text-indigo-600 font-semibold hover:underline">
+                Ir a Gestionar usuarios →
+            </a>
+        </div>
+
+        <!-- Widget MODIFICAR Usuarios -->
+         <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
+            <h2 class="text-xl font-semibold mb-2">Modificar Usuarios</h2>
+            <p class="text-gray-600 mb-4">
+                Edita y actualiza la información de los usuarios.
+            </p>
+            <a href="/user_management" class="text-indigo-600 font-semibold hover:underline">
+                Ir a Gestionar usuarios →
+            </a>
+        </div>
+        {% endif %}
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
