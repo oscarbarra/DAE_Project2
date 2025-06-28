@@ -125,7 +125,7 @@ def perfil():
     cur.execute("SELECT usr_name, usr_mail FROM Users WHERE id_usr = ?", (usuario_id,))
     datos = cur.fetchone()
     conn.close()
-    return render_template('./perfil/perfil.html', usuario=datos)
+    return render_template('home/perfil.html', usuario=datos)
 
 @app.route('/eliminar_cuenta', methods=['POST'])
 def eliminar_cuenta():
