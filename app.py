@@ -90,7 +90,7 @@ def home():
                            usr_rol=rol)
 
 # ======== Usuarios Con Rol Estandar ========
-def registrar_acceso(motivo, id_usr, id_credencial):
+def registrar_acceso(motivo, owner_name, id_usr, id_credencial):
     try:
         conn = sqlite3.connect('instance/ClaveForte.db')
         cursor = conn.cursor()
@@ -98,9 +98,9 @@ def registrar_acceso(motivo, id_usr, id_credencial):
         timestamp_actual = datetime.now()
 
         cursor.execute('''
-            INSERT INTO Access (timestam, motivo, id_usr, id_credential)
-            VALUES (?, ?, ?, ?);
-        ''', (timestamp_actual, motivo, id_usr, id_credencial))
+            INSERT INTO Access (timestam, motivo, usr_name, id_usr, id_credential)
+            VALUES (?, ?, ?, ?, ?);
+        ''', (timestamp_actual, motivo, owner_name, id_usr, id_credencial))
 
         conn.commit()
 
@@ -150,10 +150,10 @@ def agregar_credencial():
         return redirect("login")
     if request.method == 'POST':
         id_usr = session.get('usuario_id')
+        name_owner    = session.get('usuario_nombre')
         service_name  = request.form['servicio']
         service_pass  = request.form['contrasena']
         users_allows  = json.dumps([])
-        name_owner    = session.get('usuario_nombre')
 
         conn = sqlite3.connect('instance/ClaveForte.db')
         cur = conn.cursor()
@@ -168,7 +168,7 @@ def agregar_credencial():
         conn.close()
 
         # Mantiene un registro de las acciones del usuario 
-        registrar_acceso("creación", id_usr, id_credencial_nueva)
+        registrar_acceso("creación", name_owner, id_usr, id_credencial_nueva)
     return redirect('/credentials')
 
 @app.route('/share_credential', methods=['GET', 'POST'])
@@ -178,6 +178,7 @@ def compartir_credencial():
     if request.method == 'POST':
         # 1. Obtener datos del formulario y sesión
         id_owner = session.get('usuario_id')
+        name_owner = session.get('usuario_nombre')
         id_credencial = request.form.get('id_credential')
         correo_receptor = request.form.get('correo_receptor')
         clave_validacion = request.form.get('pass_validacion')
@@ -235,7 +236,7 @@ def compartir_credencial():
             flash("Credencial compartida exitosamente.", "success")
             
             # Mantiene un registro de las acciones del usuario 
-            registrar_acceso("compartir", id_owner, id_credencial)
+            registrar_acceso("compartir", name_owner, id_owner, id_credencial)
 
             return redirect(url_for('compartir_credencial'))
         except sqlite3.Error as e:
@@ -320,4 +321,4 @@ if __name__ == '__main__':
         init_db(db_path)
 
     # --- Aplicación ------------------
-    app.run()
+    app.run(debug=True)
