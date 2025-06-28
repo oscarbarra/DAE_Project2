@@ -90,6 +90,25 @@ def home():
                            usr_rol=rol)
 
 # ======== Usuarios Con Rol Estandar ========
+def registrar_acceso(motivo, id_usr, id_credencial):
+    try:
+        conn = sqlite3.connect('instance/ClaveForte.db')
+        cursor = conn.cursor()
+
+        timestamp_actual = datetime.now()
+
+        cursor.execute('''
+            INSERT INTO Access (timestam, motivo, id_usr, id_credential)
+            VALUES (?, ?, ?, ?);
+        ''', (timestamp_actual, motivo, id_usr, id_credencial))
+
+        conn.commit()
+
+    except Exception as e:
+        print(f"Error al registrar acceso: {str(e)}")
+    finally:
+        conn.close()
+
 # -------- Credenciales -------
 @app.route('/credentials')
 def credenciales():
@@ -142,8 +161,14 @@ def agregar_credencial():
             INSERT INTO Credentials (service_name, service_pass, users_allows, name_owner, id_usr)
             VALUES (?, ?, ?, ?, ?)
         """, (service_name, service_pass, users_allows,name_owner, id_usr))
+
+        id_credencial_nueva = cur.lastrowid
+
         conn.commit()
         conn.close()
+
+        # Mantiene un registro de las acciones del usuario 
+        registrar_acceso("creación", id_usr, id_credencial_nueva)
     return redirect('/credentials')
 
 @app.route('/share_credential', methods=['GET', 'POST'])
@@ -208,8 +233,11 @@ def compartir_credencial():
                     conn.commit()
 
             flash("Credencial compartida exitosamente.", "success")
-            return redirect(url_for('compartir_credencial'))
+            
+            # Mantiene un registro de las acciones del usuario 
+            registrar_acceso("compartir", id_owner, id_credencial)
 
+            return redirect(url_for('compartir_credencial'))
         except sqlite3.Error as e:
             flash(f"Error en la base de datos: {str(e)}", "danger")
             return redirect(url_for('compartir_credencial'))
