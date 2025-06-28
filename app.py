@@ -313,6 +313,35 @@ def gestionar_usuarios():
                            usr_rol = rol,
                            users = usuarios)
 
+import sqlite3
+from flask import session, render_template
+
+@app.route('/recent_actions')
+def acciones_recientes():
+    active_rol = session.get('usuario_rol')
+    rcnt_act = []
+
+    try:
+        conn = sqlite3.connect('instance/ClaveForte.db')
+        conn.row_factory = sqlite3.Row  # Permite acceder a columnas por nombre
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT * FROM Access
+        ''')
+        rcnt_act = cursor.fetchall()
+
+    except Exception as e:
+        print(f"Error al recuperar acciones recientes: {e}")
+
+    finally:
+        conn.close()
+
+    return render_template('./admin/recent/recent.html',
+                           usr_rol=active_rol,
+                           recent_acctions=rcnt_act)
+
+
 # ------- Aplicación General -------
 if __name__ == '__main__':
     # --- Crea la bd si no existe -----
