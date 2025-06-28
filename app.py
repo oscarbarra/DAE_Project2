@@ -238,7 +238,23 @@ def gestionar_usuarios():
     if (request.method == "POST"):
         method = request.form.get('_method')
         if method == 'UPDATE':
-            print('u')
+            id_usuario   = request.form.get('id_usuario')
+            old_usr_mail = request.form.get('old_mail')
+            new_usr_name = request.form.get('new_nombre_usuario')
+            new_usr_mail = request.form.get('new_correo_usuario')
+            new_usr_role = request.form.get('new_rol_usuario')
+            print(new_usr_role)
+            new_id_role  = 1 if (new_usr_role == "administrador") else 2
+
+            conn = sqlite3.connect('instance/ClaveForte.db')
+            cursor = conn.cursor()
+            cursor.execute('''
+                    UPDATE Users
+                    SET usr_name = ?, usr_mail = ?, id_rol = ?
+                    WHERE id_usr = ? AND usr_mail = ?;
+                ''', (new_usr_name, new_usr_mail, new_id_role, id_usuario, old_usr_mail))
+            conn.commit()
+            conn.close()
         elif method == 'DELETE':
             # obtener el id enviado desde el formulario
             id_usuario = request.form.get('id_usuario')
