@@ -5,7 +5,7 @@ import sqlite3
 from datetime import datetime
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Flask,render_template,redirect,url_for,request,session,flash
+from flask import Flask, render_template, redirect, url_for, request, session, flash
 
 from models import init_db
 
@@ -14,8 +14,7 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 
-# ======= Rutas Compartidas Para Todos Los Usuarios =======
-# ------- Autentificación -------
+# ========== AUTENTICACIÓN ==========
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -23,7 +22,7 @@ def index():
 @app.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'POST':
-        correo     = request.form['email']
+        correo = request.form['email']
         contraseña = request.form['password']
 
         conexion = sqlite3.connect('instance/ClaveForte.db')
@@ -35,7 +34,6 @@ def login():
         if usuario:
             id_usr, usr_name, usr_mail, usr_pass, id_rol = usuario
             if check_password_hash(usr_pass, contraseña):
-                # session: utiliza coockies para guardar la info del usuario
                 session['usuario_id'] = id_usr
                 session['usuario_nombre'] = usr_name
                 session['usuario_correo'] = usr_mail
@@ -51,43 +49,107 @@ def login():
 def signup():
     if request.method == 'POST':
         username = request.form['username']
-        email    = request.form['email']
+        email = request.form['email']
         password_plano = request.form['password']
         password = generate_password_hash(password_plano)
-        secret = generate_password_hash(password_plano) 
+        secret = generate_password_hash(password_plano)
+        created = str(datetime.now())
+        rol = request.form['rol']
 
-        created  = str(datetime.now())
-        rol      = request.form['rol']
-
-        # Guardar en la base de datos
         conexion = sqlite3.connect('instance/ClaveForte.db')
         cursor = conexion.cursor()
-
         cursor.execute("""
             INSERT INTO Users (usr_name, usr_mail, usr_pass, secret_pass, last_login, id_rol)
             VALUES (?, ?, ?, ?, ?, ?)
         """, (username, email, password, secret, created , rol))
-
         conexion.commit()
         conexion.close()
 
         return redirect(url_for('login'))
     return render_template('/auth/signup.html')
 
-# ------- Logout -------
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/login')
 
-# ------- Pagina de Inicio -------
+
+# ========== HOME Y PERFIL ==========
 @app.route('/home')
 def home():
-    if (not session):
+    if not session:
         return redirect("login")
     rol = session.get('usuario_rol')
     return render_template('/home/home.html',
                            usr_rol=rol)
+
+@app.route('/profile', methods=['GET', 'POST'])
+def perfil():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+
+    rol = session.get('usuario_rol')
+    usuario_id = session['usuario_id']
+    conn = sqlite3.connect('instance/ClaveForte.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        nuevo_nombre = request.form['nombre']
+        nuevo_correo = request.form['correo']
+        nueva_pass = request.form['password']
+
+        if nueva_pass.strip():
+            nueva_pass_hash = generate_password_hash(nueva_pass)
+            cur.execute("""
+                UPDATE Users
+                SET usr_name = ?, usr_mail = ?, usr_pass = ?
+                WHERE id_usr = ?
+            """, (nuevo_nombre, nuevo_correo, nueva_pass_hash, usuario_id))
+        else:
+            cur.execute("""
+                UPDATE Users
+                SET usr_name = ?, usr_mail = ?
+                WHERE id_usr = ?
+            """, (nuevo_nombre, nuevo_correo, usuario_id))
+
+        conn.commit()
+        conn.close()
+
+        session['usuario_nombre'] = nuevo_nombre
+        session['usuario_correo'] = nuevo_correo
+        flash("Perfil actualizado correctamente.")
+        return redirect(url_for('perfil'))
+
+    cur.execute("SELECT usr_name, usr_mail, id_rol FROM Users WHERE id_usr = ?", (usuario_id,))
+    datos = cur.fetchone()
+    conn.close()
+    return render_template('/profile/profile.html', 
+                           usr_rol=rol,
+                           usuario=datos)
+
+@app.route('/eliminar_cuenta', methods=['POST'])
+def eliminar_cuenta():
+    if 'usuario_id' not in session:
+        flash("Sesión expirada.")
+        return redirect(url_for('login'))
+
+    if request.method == "POST":
+        usuario_id = session.get('usuario_id')
+        try:
+            conn = sqlite3.connect('instance/ClaveForte.db')
+            cur = conn.cursor()
+            cur.execute("DELETE FROM Credentials WHERE id_usr = ?", (usuario_id,))
+            cur.execute("DELETE FROM Users WHERE id_usr = ?", (usuario_id,))
+            conn.commit()
+            conn.close()
+
+            session.clear()
+            flash("Cuenta eliminada correctamente.")
+            return redirect(url_for('login'))
+        except Exception as e:
+            flash(f"Error al eliminar cuenta: {str(e)}")
+            return redirect(url_for('perfil'))
 
 # ======== Usuarios Con Rol Estandar ========
 def registrar_acceso(motivo, owner_name, id_usr, id_credencial):
@@ -112,22 +174,19 @@ def registrar_acceso(motivo, owner_name, id_usr, id_credencial):
 # -------- Credenciales -------
 @app.route('/credentials')
 def credenciales():
-    if (not session):
+    if not session:
         return redirect("login")
-    
+
     usuario_id = session.get('usuario_id')
     rol = session.get('usuario_rol')
 
     conn = sqlite3.connect('instance/ClaveForte.db')
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-
-    # Obtener todas las credenciales que tengan algún valor en users_allows
     cur.execute("SELECT * FROM Credentials WHERE id_usr = ? OR users_allows IS NOT NULL", (usuario_id,))
     todas = cur.fetchall()
     conn.close()
 
-    # Filtrar en Python las que pertenecen al usuario o le fueron compartidas
     credenciales = []
     for c in todas:
         if c['id_usr'] == usuario_id:
@@ -138,7 +197,7 @@ def credenciales():
                 if isinstance(compartidos, list) and usuario_id in compartidos:
                     credenciales.append(c)
             except (json.JSONDecodeError, TypeError):
-                continue  # evitar errores si el JSON está mal formado o vacío
+                continue
     return render_template('/credentials/credentials.html',
                            credenciales=credenciales,
                            usuario_actual=usuario_id,
@@ -146,7 +205,7 @@ def credenciales():
 
 @app.route('/add_credential', methods=['GET','POST'])
 def agregar_credencial():
-    if (not session):
+    if not session:
         return redirect("login")
     if request.method == 'POST':
         id_usr = session.get('usuario_id')
@@ -173,10 +232,9 @@ def agregar_credencial():
 
 @app.route('/share_credential', methods=['GET', 'POST'])
 def compartir_credencial():
-    if (not session):
+    if not session:
         return redirect("login")
     if request.method == 'POST':
-        # 1. Obtener datos del formulario y sesión
         id_owner = session.get('usuario_id')
         name_owner = session.get('usuario_nombre')
         id_credencial = request.form.get('id_credential')
@@ -192,7 +250,6 @@ def compartir_credencial():
                 conn.row_factory = sqlite3.Row
                 cur = conn.cursor()
 
-                # Verificar existencia del receptor
                 cur.execute("SELECT id_usr FROM Users WHERE usr_mail = ?", (correo_receptor,))
                 receptor = cur.fetchone()
                 if not receptor:
@@ -201,14 +258,12 @@ def compartir_credencial():
 
                 id_receptor = receptor['id_usr']
 
-                # Verificar clave secundaria (hash)
                 cur.execute("SELECT secret_pass FROM Users WHERE id_usr = ?", (id_owner,))
                 propietario = cur.fetchone()
                 if not propietario or not check_password_hash(propietario['secret_pass'], clave_validacion):
                     flash("Clave secundaria incorrecta.", "danger")
                     return redirect(url_for('compartir_credencial'))
 
-                # Verificar propiedad de la credencial
                 cur.execute(
                     "SELECT users_allows FROM Credentials WHERE id_credential = ? AND id_usr = ?",
                     (id_credencial, id_owner)
@@ -218,13 +273,11 @@ def compartir_credencial():
                     flash("No se encontró la credencial o no eres su propietario.", "danger")
                     return redirect(url_for('compartir_credencial'))
 
-                # Cargar lista de usuarios permitidos
                 try:
                     usuarios_permitidos = json.loads(credencial['users_allows']) if credencial['users_allows'] else []
                 except json.JSONDecodeError:
                     usuarios_permitidos = []
 
-                # Agregar receptor si no está en la lista
                 if id_receptor not in usuarios_permitidos:
                     usuarios_permitidos.append(id_receptor)
                     cur.execute(
@@ -245,7 +298,6 @@ def compartir_credencial():
 
     usuario_id = session.get('usuario_id')
     rol = session.get('usuario_rol')
-    # Mostrar formulario con credenciales propias
     conn = sqlite3.connect('instance/ClaveForte.db')
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -254,17 +306,18 @@ def compartir_credencial():
     conn.close()
 
     return render_template('./credentials/compartir/compartir.html',
-                           credenciales=credenciales, 
+                           credenciales=credenciales,
                            usuario_actual=usuario_id,
                            usr_rol=rol)
 
-# ======== Usuarios Con Rol de Administrador ========
-# -------- Gestionar Usuarios --------
+
+# ========== ADMINISTRADOR ==========
 @app.route('/user_management', methods=['GET', 'POST'])
 def gestionar_usuarios():
-    if (not session):
+    if not session:
         return redirect("login")
-    if (request.method == "POST"):
+
+    if request.method == "POST":
         method = request.form.get('_method')
         if method == 'UPDATE':
             id_usuario   = request.form.get('id_usuario')
@@ -292,26 +345,24 @@ def gestionar_usuarios():
             cur.execute("DELETE FROM Users WHERE id_usr = ?", (id_usuario,))
             conn.commit()
             conn.close()
-    
+
     rol = session.get('usuario_rol')
-    # Todos los Usuarios registrados en el sistema
     usuario_logeado_email = session.get('usuario_correo')
-    # Lista de correos a ignorar
     correos_a_ignorar = ["admin@gmail.com", "invitado@gmail.com", usuario_logeado_email]
-    # Conexión segura
+
     conn = sqlite3.connect('instance/ClaveForte.db')
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    # Prepara los placeholders (?) para la cantidad de correos
     placeholders = ', '.join(['?'] * len(correos_a_ignorar))
-    # Ejecuta la consulta excluyendo los correos
     cur.execute(f"""SELECT * FROM Users WHERE usr_mail NOT IN ({placeholders})""",
                 correos_a_ignorar)
     usuarios = cur.fetchall()
     conn.close()
+
     return render_template('./admin/management/management.html',
-                           usr_rol = rol,
-                           users = usuarios)
+                           usr_rol=rol,
+                           users=usuarios)
+
 
 import sqlite3
 from flask import session, render_template
@@ -344,7 +395,6 @@ def acciones_recientes():
 
 # ------- Aplicación General -------
 if __name__ == '__main__':
-    # --- Crea la bd si no existe -----
     db_path = 'instance/ClaveForte.db'
     if not os.path.exists(db_path):
         init_db(db_path)
