@@ -133,6 +133,26 @@ def perfil():
     conn.close()
     return render_template('./perfil/perfil.html', usuario=datos)
 
+
+    #-------Eliminar cuenta-------
+@app.route('/eliminar_cuenta', methods=['POST'])
+def eliminar_cuenta():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+
+    usuario_id = session['usuario_id']
+    conn = sqlite3.connect('instance/ClaveForte.db')
+    cur = conn.cursor()
+    cur.execute("DELETE FROM Credentials WHERE id_usr = ?", (usuario_id,))
+    cur.execute("DELETE FROM Users WHERE id_usr = ?", (usuario_id,))
+    conn.commit()
+    conn.close()
+
+    session.clear()
+    flash("Cuenta eliminada correctamente.")
+    return redirect(url_for('signup'))
+
+
 # ======== Usuarios Con Rol Estandar ========
 # -------- Credenciales -------
 @app.route('/credentials')
