@@ -89,6 +89,50 @@ def home():
     return render_template('/home/home.html',
                            usr_rol=rol)
 
+    # -------Perfil-------
+@app.route('/perfil', methods=['GET', 'POST'])
+def perfil():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+
+    usuario_id = session['usuario_id']
+    conn = sqlite3.connect('instance/ClaveForte.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        nuevo_nombre = request.form['nombre']
+        nuevo_correo = request.form['correo']
+        nueva_pass = request.form['password']
+
+        if nueva_pass.strip():
+            nueva_pass_hash = generate_password_hash(nueva_pass)
+            cur.execute("""
+                UPDATE Users
+                SET usr_name = ?, usr_mail = ?, usr_pass = ?
+                WHERE id_usr = ?
+            """, (nuevo_nombre, nuevo_correo, nueva_pass_hash, usuario_id))
+        else:
+            cur.execute("""
+                UPDATE Users
+                SET usr_name = ?, usr_mail = ?
+                WHERE id_usr = ?
+            """, (nuevo_nombre, nuevo_correo, usuario_id))
+
+        conn.commit()
+        conn.close()
+
+        # Actualizar sesión
+        session['usuario_nombre'] = nuevo_nombre
+        session['usuario_correo'] = nuevo_correo
+        flash("Perfil actualizado correctamente.")
+        return redirect(url_for('perfil'))
+
+    cur.execute("SELECT usr_name, usr_mail FROM Users WHERE id_usr = ?", (usuario_id,))
+    datos = cur.fetchone()
+    conn.close()
+    return render_template('./perfil/perfil.html', usuario=datos)
+
 # ======== Usuarios Con Rol Estandar ========
 # -------- Credenciales -------
 @app.route('/credentials')
