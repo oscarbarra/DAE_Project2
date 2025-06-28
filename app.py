@@ -14,9 +14,7 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 
-
 # ========== AUTENTICACIÓN ==========
-
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -77,7 +75,6 @@ def logout():
 
 
 # ========== HOME Y PERFIL ==========
-
 @app.route('/home')
 def home():
     if not session:
@@ -85,11 +82,12 @@ def home():
     rol = session.get('usuario_rol')
     return render_template('/home/home.html', usr_rol=rol)
 
-@app.route('/perfil', methods=['GET', 'POST'])
+@app.route('/profile', methods=['GET', 'POST'])
 def perfil():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
 
+    rol = session.get('usuario_rol')
     usuario_id = session['usuario_id']
     conn = sqlite3.connect('instance/ClaveForte.db')
     conn.row_factory = sqlite3.Row
@@ -122,10 +120,12 @@ def perfil():
         flash("Perfil actualizado correctamente.")
         return redirect(url_for('perfil'))
 
-    cur.execute("SELECT usr_name, usr_mail FROM Users WHERE id_usr = ?", (usuario_id,))
+    cur.execute("SELECT usr_name, usr_mail, id_rol FROM Users WHERE id_usr = ?", (usuario_id,))
     datos = cur.fetchone()
     conn.close()
-    return render_template('home/perfil.html', usuario=datos)
+    return render_template('/profile/profile.html', 
+                           usr_rol=rol,
+                           usuario=datos)
 
 @app.route('/eliminar_cuenta', methods=['POST'])
 def eliminar_cuenta():
@@ -133,25 +133,25 @@ def eliminar_cuenta():
         flash("Sesión expirada.")
         return redirect(url_for('login'))
 
-    usuario_id = session['usuario_id']
-    try:
-        conn = sqlite3.connect('instance/ClaveForte.db')
-        cur = conn.cursor()
-        cur.execute("DELETE FROM Credentials WHERE id_usr = ?", (usuario_id,))
-        cur.execute("DELETE FROM Users WHERE id_usr = ?", (usuario_id,))
-        conn.commit()
-        conn.close()
+    if request.method == "POST":
+        usuario_id = session.get('usuario_id')
+        try:
+            conn = sqlite3.connect('instance/ClaveForte.db')
+            cur = conn.cursor()
+            cur.execute("DELETE FROM Credentials WHERE id_usr = ?", (usuario_id,))
+            cur.execute("DELETE FROM Users WHERE id_usr = ?", (usuario_id,))
+            conn.commit()
+            conn.close()
 
-        session.clear()
-        flash("Cuenta eliminada correctamente.")
-        return redirect(url_for('signup'))
-    except Exception as e:
-        flash(f"Error al eliminar cuenta: {str(e)}")
-        return redirect(url_for('perfil'))
+            session.clear()
+            flash("Cuenta eliminada correctamente.")
+            return redirect(url_for('login'))
+        except Exception as e:
+            flash(f"Error al eliminar cuenta: {str(e)}")
+            return redirect(url_for('perfil'))
 
 
 # ========== CREDENCIALES (USUARIOS) ==========
-
 @app.route('/credentials')
 def credenciales():
     if not session:
@@ -282,7 +282,6 @@ def compartir_credencial():
 
 
 # ========== ADMINISTRADOR ==========
-
 @app.route('/user_management', methods=['GET', 'POST'])
 def gestionar_usuarios():
     if not session:
