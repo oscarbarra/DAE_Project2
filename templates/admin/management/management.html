@@ -10,6 +10,7 @@
     <form id="form-usuario" action="/user_management" method="POST" class="space-y-4">
       <!-- ID del Usuario (oculto) -->
       <input type="hidden" id="id_usuario" name="id_usuario" value="">
+      <input type="hidden" id="old_mail" name="old_mail" value="">
 
       <!-- Campo oculto para definir el método simulado -->
       <input type="hidden" id="_method" name="_method" value="">
@@ -17,21 +18,21 @@
       <!-- Nombre del Usuario -->
       <div>
         <label class="block text-sm font-medium">Nombre del Usuario</label>
-        <input type="text" id="nombre_usuario" name="nombre_usuario" required
+        <input type="text" id="new_nombre_usuario" name="new_nombre_usuario" required
               class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400">
       </div>
 
       <!-- Correo del Usuario -->
       <div>
         <label class="block text-sm font-medium">Correo del Usuario</label>
-        <input type="email" id="correo_usuario" name="correo_usuario" required
+        <input type="email" id="new_correo_usuario" name="new_correo_usuario" required
               class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400">
       </div>
 
       <!-- Rol del Usuario -->
       <div>
         <label class="block text-sm font-medium">Rol del Usuario</label>
-        <input type="text" id="rol_usuario" name="rol_usuario" required
+        <input type="text" id="new_rol_usuario" name="new_rol_usuario" required
               class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400">
       </div>
 
@@ -128,9 +129,10 @@
         else if (rolId === "2") rolTexto = "Usuario";
 
         document.getElementById("id_usuario").value = id;
-        document.getElementById("nombre_usuario").value = nombre;
-        document.getElementById("correo_usuario").value = correo;
-        document.getElementById("rol_usuario").value = rolTexto;
+        document.getElementById("old_mail").value = correo;
+        document.getElementById("new_nombre_usuario").value = nombre;
+        document.getElementById("new_correo_usuario").value = correo;
+        document.getElementById("new_rol_usuario").value = rolTexto;
       });
     });
   });
