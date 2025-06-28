@@ -14,23 +14,28 @@ def eliminar_cuenta():
     session.clear()
     flash("Cuenta eliminada correctamente.")
     return redirect(url_for('signup'))
-<h2>Perfil de Usuario</h2>
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<h2>Mi Perfil</h2>
+
 <form method="POST" action="{{ url_for('perfil') }}">
-    <label>Nombre:</label>
+    <label>Nombre:</label><br>
     <input type="text" name="nombre" value="{{ usuario['usr_name'] }}" required><br><br>
 
-    <label>Correo:</label>
+    <label>Correo:</label><br>
     <input type="email" name="correo" value="{{ usuario['usr_mail'] }}" required><br><br>
 
-    <label>Nueva Contraseña:</label>
+    <label>Nueva Contraseña:</label><br>
     <input type="password" name="password"><br><br>
 
-    <button type="submit">Actualizar Perfil</button>
+    <button type="submit">Guardar Cambios</button>
 </form>
 
 <hr>
 
-<form method="POST" action="{{ url_for('eliminar_cuenta') }}" onsubmit="return confirm('¿Estás seguro de eliminar tu cuenta?');">
-    <button type="submit" style="color: red;">Eliminar Cuenta</button>
+<form method="POST" action="{{ url_for('eliminar_cuenta') }}" onsubmit="return confirm('¿Deseas eliminar tu cuenta? Esta acción no se puede deshacer.')">
+    <button type="submit" style="color:red;">Eliminar Cuenta</button>
 </form>
 {% endblock %}
