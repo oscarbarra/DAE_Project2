@@ -1,0 +1,80 @@
+{% extends 'layout.html' %}
+{% include "./credentials/añadir/añadir.html" %}
+
+{% block content %}
+<div class="flex-1 p-10">
+    <h2 class="text-3xl font-bold text-indigo-700 mb-6">Mi Perfil</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Formulario de edición de perfil -->
+        <form method="POST" action="{{ url_for('perfil') }}"
+              class="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6">
+
+            <div>
+                <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre:</label>
+                <input type="text" id="nombre" name="nombre" value="{{ usuario['usr_name'] }}" required
+                       class="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            </div>
+
+            <div>
+                <label for="correo" class="block text-sm font-medium text-gray-700 mb-1">Correo:</label>
+                <input type="email" id="correo" name="correo" value="{{ usuario['usr_mail'] }}" required
+                       class="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña:</label>
+                <input type="password" id="password" name="password"
+                       class="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                       placeholder="Dejar en blanco para no cambiar">
+            </div>
+
+            <div class="flex justify-end gap-4 pt-2">
+                <!-- Formulario: Guardar Cambios -->
+                <form method="POST" action="{{ url_for('perfil') }}">
+                    <button type="submit"
+                            class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition font-semibold">
+                        Guardar Cambios
+                    </button>
+                </form>
+
+                <!-- Formulario: Eliminar Cuenta -->
+                <form method="POST" action="{{ url_for('eliminar_cuenta') }}"
+                    onsubmit="return confirm('¿Deseas eliminar tu cuenta? Esta acción no se puede deshacer.')">
+                    <button type="submit"
+                            class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition font-semibold">
+                        Eliminar Cuenta
+                    </button>
+                </form>
+            </div>
+        </form>
+
+        <!-- Panel informativo al lado derecho -->
+        <div class="space-y-6">
+            <!-- Opción 2: Tarjeta de usuario -->
+            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-md text-center">
+                <div class="mb-4 flex justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-20 h-20 text-indigo-600">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-indigo-600">{{ usuario['usr_name'] }}</h3>
+                <p class="text-sm text-indigo-600">{{ usuario['usr_mail'] }}</p>
+                <span class="inline-block mt-3 px-3 py-1 text-xs bg-indigo-100 text-indigo-600 rounded-full">
+                    Rol: {{ 'usuario' if usuario['id_rol'] == 2 else 'NAN' }}
+                </span>
+            </div>
+
+            <!-- Opción 1: Consejos -->
+            <div class="bg-white text-indigo-800 p-4 rounded-lg shadow-md">
+                <h3 class="font-semibold mb-2">Consejos</h3>
+                <ul class="list-disc pl-5 text-sm space-y-1">
+                    <li>Usa un correo válido para recuperar tu cuenta.</li>
+                    <li>La contraseña nueva reemplazará la actual.</li>
+                    <li>No compartas tu usuario con terceros.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
