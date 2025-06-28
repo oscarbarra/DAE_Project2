@@ -40,7 +40,7 @@ def login():
                 session['usuario_nombre'] = usr_name
                 session['usuario_correo'] = usr_mail
                 session['usuario_rol'] = id_rol
-                return redirect(url_for('perfil'))
+                return redirect(url_for('home'))
             else:
                 flash("Contraseña incorrecta")
         else:
