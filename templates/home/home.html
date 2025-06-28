@@ -1,79 +1,38 @@
 
-{% extends './layout.html' %}
+{% extends "layout.html" %}
 
 {% block content %}
-<!-- Contenido principal -->
-<div class="flex-1 p-10">
-    <h1 class="text-3xl font-bold mb-4">Bienvenido a ClaveForte</h1>
-    {% if usr_rol == 2 %}
-    <p class="text-gray-600">
-        Desde aquí puedes gestionar tus credenciales y compartirlas con otros usuarios de forma segura. 
-    </p>
-    {% endif %}
-    {% if usr_rol == 1 %}
-    <p class="text-gray-600">
-        Desde aquí puedes gestionar a los usuarios de forma segura. 
-    </p>
-    {% endif %}
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {% if usr_rol == 2 %}
-        <!-- Widget de Mis Credenciales -->
-        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
-            <h2 class="text-xl font-semibold mb-2">Ver Credenciales</h2>
-            <p class="text-gray-600 mb-4">
-                Consulta y administra tus credenciales guardadas.
-            </p>
-            <a href="/credentials" class="text-indigo-600 font-semibold hover:underline">
-                Ir a Mis Credenciales →
-            </a>
-        </div>
+<div class="max-w-4xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">¡Bienvenido, {{ session['usuario_nombre'] }}!</h1>
 
-        <!-- Widget de Compartir -->
-        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
-            <h2 class="text-xl font-semibold mb-2">Compartir</h2>
-            <p class="text-gray-600 mb-4">
-                Comparte una credencial con otro usuario mediante una clave segura.
-            </p>
-            <a href="/share_credential" class="text-indigo-600 font-semibold hover:underline">
-                Ir a Compartir →
-            </a>
-        </div>
-        {% endif %}
+    <p class="mb-6 text-gray-600">Tu rol: 
+        <span class="font-semibold">
+            {% if usr_rol == 1 %}
+                Administrador
+            {% else %}
+                Usuario
+            {% endif %}
+        </span>
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <a href="{{ url_for('credenciales') }}" class="bg-blue-500 text-white px-6 py-4 rounded-lg shadow hover:bg-blue-600 transition">
+             Ver Mis Credenciales
+        </a>
+
+        <a href="{{ url_for('perfil') }}" class="bg-green-500 text-white px-6 py-4 rounded-lg shadow hover:bg-green-600 transition">
+            Mi Perfil
+        </a>
 
         {% if usr_rol == 1 %}
-        <!-- Widget REVISAR Usuarios -->
-         <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
-            <h2 class="text-xl font-semibold mb-2">Ver Usuarios</h2>
-            <p class="text-gray-600 mb-4">
-                Revisa y administra a los usurios del sistema.
-            </p>
-            <a href="/user_management" class="text-indigo-600 font-semibold hover:underline">
-                Ir a Gestionar usuarios →
-            </a>
-        </div>
-
-        <!-- Widget ELIMINAR Usuarios -->
-         <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
-            <h2 class="text-xl font-semibold mb-2">Eliminar usuarios</h2>
-            <p class="text-gray-600 mb-4">
-                Supervisa y elimina usuarios de forma segura.
-            </p>
-            <a href="/user_management" class="text-indigo-600 font-semibold hover:underline">
-                Ir a Gestionar usuarios →
-            </a>
-        </div>
-
-        <!-- Widget MODIFICAR Usuarios -->
-         <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition">
-            <h2 class="text-xl font-semibold mb-2">Modificar Usuarios</h2>
-            <p class="text-gray-600 mb-4">
-                Edita y actualiza la información de los usuarios.
-            </p>
-            <a href="/user_management" class="text-indigo-600 font-semibold hover:underline">
-                Ir a Gestionar usuarios →
-            </a>
-        </div>
+        <a href="{{ url_for('gestionar_usuarios') }}" class="bg-purple-500 text-white px-6 py-4 rounded-lg shadow hover:bg-purple-600 transition">
+             Administrar Usuarios
+        </a>
         {% endif %}
+
+        <a href="{{ url_for('logout') }}" class="bg-red-500 text-white px-6 py-4 rounded-lg shadow hover:bg-red-600 transition">
+          Cerrar Sesión
+        </a>
     </div>
 </div>
 {% endblock %}
