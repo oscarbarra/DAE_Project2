@@ -130,19 +130,24 @@ def perfil():
 @app.route('/eliminar_cuenta', methods=['POST'])
 def eliminar_cuenta():
     if 'usuario_id' not in session:
+        flash("Sesión expirada.")
         return redirect(url_for('login'))
 
     usuario_id = session['usuario_id']
-    conn = sqlite3.connect('instance/ClaveForte.db')
-    cur = conn.cursor()
-    cur.execute("DELETE FROM Credentials WHERE id_usr = ?", (usuario_id,))
-    cur.execute("DELETE FROM Users WHERE id_usr = ?", (usuario_id,))
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect('instance/ClaveForte.db')
+        cur = conn.cursor()
+        cur.execute("DELETE FROM Credentials WHERE id_usr = ?", (usuario_id,))
+        cur.execute("DELETE FROM Users WHERE id_usr = ?", (usuario_id,))
+        conn.commit()
+        conn.close()
 
-    session.clear()
-    flash("Cuenta eliminada correctamente.")
-    return redirect(url_for('signup'))
+        session.clear()
+        flash("Cuenta eliminada correctamente.")
+        return redirect(url_for('signup'))
+    except Exception as e:
+        flash(f"Error al eliminar cuenta: {str(e)}")
+        return redirect(url_for('perfil'))
 
 
 # ========== CREDENCIALES (USUARIOS) ==========
