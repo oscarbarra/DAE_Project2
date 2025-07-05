@@ -25,7 +25,7 @@ def make_db(nombre_bd="instance/ClaveForte.db"):
         usr_name     TEXT NOT NULL,
         usr_mail     TEXT NOT NULL UNIQUE,
         usr_pass     TEXT NOT NULL,       -- Contraseña principal (hash)
-        secret_pass  TEXT NOT NULL,       -- Contraseña para compartir (hash)
+        secret_pass  TEXT,                -- Contraseña para compartir (hash)
         last_login   TEXT,                -- Fecha en formato ISO
         id_rol       INTEGER NOT NULL,
         FOREIGN KEY (id_rol) REFERENCES Roles(id_rol)
