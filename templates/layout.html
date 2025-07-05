@@ -6,21 +6,7 @@
   <title>ClaveForte</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="flex overflow-y-hidden h-screen">
-  
-  {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div class="container mt-4">
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
-{% endwith %}
-
+<body class="flex overflow-y-hidden h-full">
   {% include './sidebar/sidebar.html' with context%}
   
   <main class="flex-1 p-10">

@@ -25,26 +25,27 @@ def login():
         correo = request.form['email']
         contraseña = request.form['password']
 
-        conexion = sqlite3.connect('instance/ClaveForte.db')
-        cursor = conexion.cursor()
-        cursor.execute("SELECT id_usr, usr_name, usr_mail, usr_pass, id_rol FROM Users WHERE usr_mail = ?", (correo,))
-        usuario = cursor.fetchone()
-        conexion.close()
+        try:
+            conexion = sqlite3.connect('instance/ClaveForte.db')
+            cursor = conexion.cursor()
+            cursor.execute("SELECT id_usr, usr_name, usr_mail, usr_pass, id_rol FROM Users WHERE usr_mail = ?", (correo,))
+        finally:
+            usuario = cursor.fetchone()
+            conexion.close()
 
-        if usuario:
-            id_usr, usr_name, usr_mail, usr_pass, id_rol = usuario
-            if check_password_hash(usr_pass, contraseña):
-                session['usuario_id'] = id_usr
-                session['usuario_nombre'] = usr_name
-                session['usuario_correo'] = usr_mail
-                session['usuario_rol'] = id_rol
-                flash("Inicio de sesión exitoso", "success")  
-                return redirect(url_for('home'))
-            else:
-                flash("Contraseña incorrecta", "danger")
-        else:
-            flash("Correo no registrado", "danger")
-
+        if not usuario:
+            flash("Correo y/o Contraseña incorrectas", "danger")
+            return redirect(url_for('login'))
+        
+        id_usr, usr_name, usr_mail, usr_pass, id_rol = usuario
+        if check_password_hash(usr_pass, contraseña):
+            session['usuario_id'] = id_usr
+            session['usuario_nombre'] = usr_name
+            session['usuario_correo'] = usr_mail
+            session['usuario_rol'] = id_rol
+            flash("Inicio de sesión exitoso", "success") 
+            return render_template("/auth/login.html", redirigir=True)
+        
     return render_template('/auth/login.html')
 
 
@@ -59,16 +60,21 @@ def signup():
         created = str(datetime.now())
         rol = request.form['rol']
 
-        conexion = sqlite3.connect('instance/ClaveForte.db')
-        cursor = conexion.cursor()
-        cursor.execute("""
-            INSERT INTO Users (usr_name, usr_mail, usr_pass, secret_pass, last_login, id_rol)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (username, email, password, secret, created , rol))
-        conexion.commit()
-        conexion.close()
+        try:
+            conexion = sqlite3.connect('instance/ClaveForte.db')
+            cursor = conexion.cursor()
+            cursor.execute("""
+                INSERT INTO Users (usr_name, usr_mail, usr_pass, secret_pass, last_login, id_rol)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (username, email, password, secret, created , rol))
+            conexion.commit()
+        except sqlite3.IntegrityError:
+            flash("Correo ya registrado", "danger")
+            return redirect(url_for('signup'))
+        finally:
+            conexion.close()
 
-       flash("Cuenta creada correctamente", "success")
+        flash("Cuenta creada correctamente", "success")
         return redirect(url_for('login'))
 
     return render_template('/auth/signup.html')
@@ -209,31 +215,31 @@ def credenciales():
                            usuario_actual=usuario_id,
                            usr_rol=rol)
 
-@app.route('/add_credential', methods=['GET','POST'])
+@app.route('/add_credential', methods=['POST'])
 def agregar_credencial():
     if not session:
         return redirect("login")
-    if request.method == 'POST':
-        id_usr = session.get('usuario_id')
-        name_owner    = session.get('usuario_nombre')
-        service_name  = request.form['servicio']
-        service_pass  = request.form['contrasena']
-        users_allows  = json.dumps([])
+    
+    id_usr = session.get('usuario_id')
+    name_owner    = session.get('usuario_nombre')
+    service_name  = request.form['servicio']
+    service_pass  = request.form['contrasena']
+    users_allows  = json.dumps([])
 
+    try:
         conn = sqlite3.connect('instance/ClaveForte.db')
         cur = conn.cursor()
         cur.execute("""
             INSERT INTO Credentials (service_name, service_pass, users_allows, name_owner, id_usr)
             VALUES (?, ?, ?, ?, ?)
         """, (service_name, service_pass, users_allows,name_owner, id_usr))
-
+    finally:
         id_credencial_nueva = cur.lastrowid
-
         conn.commit()
-        conn.close()
-
+        conn.close()    
         # Mantiene un registro de las acciones del usuario 
         registrar_acceso("creación", name_owner, id_usr, id_credencial_nueva)
+        flash('Credencial registrada correctamete', 'success')
     return redirect('/credentials')
 
 @app.route('/share_credential', methods=['GET', 'POST'])
@@ -368,10 +374,6 @@ def gestionar_usuarios():
     return render_template('./admin/management/management.html',
                            usr_rol=rol,
                            users=usuarios)
-
-
-import sqlite3
-from flask import session, render_template
 
 @app.route('/recent_actions')
 def acciones_recientes():
