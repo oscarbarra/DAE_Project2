@@ -8,6 +8,23 @@
 <body class="bg-gray-100 flex items-center justify-center h-screen">
   <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
     <h2 class="text-2xl font-bold mb-6 text-center">Iniciar Sesión</h2>
+     <!-- Mostrar mensajes flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="mb-4">
+      {% for category, message in messages %}
+        <div class="p-3 rounded-xl text-sm font-medium 
+                    {% if category == 'success' %}bg-green-100 text-green-800
+                    {% elif category == 'info' %}bg-blue-100 text-blue-800
+                    {% elif category == 'warning' %}bg-yellow-100 text-yellow-800
+                    {% elif category == 'danger' %}bg-red-100 text-red-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
     <!-- Formulario -->
     <form action="/login" method="POST" class="space-y-4">
