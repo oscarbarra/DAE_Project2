@@ -192,43 +192,42 @@ def crear_pass_secundaria():
     usuario_id = session['usuario_id']
     secret = request.form.get('secret_pass')
     confirm = request.form.get('confirm_pass')
+    origen = request.form.get('origen')
+    print(origen)
 
     if not secret or secret != confirm:
         flash("Las contraseñas no coinciden.", "danger")
-        return redirect(url_for('mostrar_credenciales'))
+        return redirect(url_for(origen))
 
-    # Conectar a la base de datos
-    conn = sqlite3.connect('instance/ClaveForte.db')
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
+    try:
+        conn = sqlite3.connect('instance/ClaveForte.db')
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
 
-    # Obtener la contraseña principal hasheada del usuario
-    cur.execute("SELECT usr_pass FROM Users WHERE id_usr = ?", (usuario_id,))
-    fila = cur.fetchone()
+        cur.execute("SELECT usr_pass FROM Users WHERE id_usr = ?", (usuario_id,))
+        fila = cur.fetchone()
 
-    if fila is None:
-        flash("Usuario no encontrado.", "danger")
+        if fila is None:
+            flash("Usuario no encontrado.", "danger")
+            return redirect(url_for(origen))
+
+        if check_password_hash(fila['usr_pass'], secret):
+            flash("La contraseña secundaria no puede ser igual a tu contraseña principal.", "warning")
+            return redirect(url_for(origen))
+
+        hashed_secret = generate_password_hash(secret)
+        cur.execute("UPDATE Users SET secret_pass = ? WHERE id_usr = ?", (hashed_secret, usuario_id))
+        conn.commit()
+
+        flash("Contraseña secundaria creada con éxito.", "success")
+        return redirect(url_for(origen))
+
+    except sqlite3.Error as e:
+        flash("Error en la base de datos.", "danger")
+        return redirect(url_for(origen))
+
+    finally:
         conn.close()
-        return redirect(url_for('mostrar_credenciales'))
-
-    hash_pass_principal = fila['usr_pass']
-
-    # Verificar si la contraseña secundaria es igual a la principal
-    if check_password_hash(hash_pass_principal, secret):
-        flash("La contraseña secundaria no puede ser igual a tu contraseña principal.", "warning")
-        conn.close()
-        return redirect(url_for('mostrar_credenciales'))
-
-    # Encriptar la contraseña secundaria
-    hashed_secret = generate_password_hash(secret)
-
-    # Guardar en la base de datos
-    cur.execute("UPDATE Users SET secret_pass = ? WHERE id_usr = ?", (hashed_secret, usuario_id))
-    conn.commit()
-    conn.close()
-
-    flash("Contraseña secundaria creada con éxito.", "success")
-    return redirect(url_for('mostrar_credenciales'))
 
 @app.route('/credentials')
 def mostrar_credenciales():
@@ -277,7 +276,8 @@ def mostrar_credenciales():
         credenciales=credenciales_visibles,
         usuario_actual=usuario_id,
         usr_rol=usuario_rol,
-        tiene_pass_secundaria=tiene_pass_secundaria
+        tiene_pass_secundaria=tiene_pass_secundaria,
+        origen='mostrar_credenciales'
     )
 
 @app.route('/add_credential', methods=['POST'])
@@ -309,83 +309,97 @@ def agregar_credencial():
 
 @app.route('/share_credential', methods=['GET', 'POST'])
 def compartir_credencial():
-    if not session:
-        return redirect("login")
-    if request.method == 'POST':
-        id_owner = session.get('usuario_id')
-        name_owner = session.get('usuario_nombre')
-        id_credencial = request.form.get('id_credential')
-        correo_receptor = request.form.get('correo_receptor')
-        clave_validacion = request.form.get('pass_validacion')
-
-        if not id_owner or not id_credencial or not correo_receptor or not clave_validacion:
-            flash("Faltan campos obligatorios.", "danger")
-            return redirect(url_for('compartir_credencial'))
-
-        try:
-            with sqlite3.connect('instance/ClaveForte.db') as conn:
-                conn.row_factory = sqlite3.Row
-                cur = conn.cursor()
-
-                cur.execute("SELECT id_usr FROM Users WHERE usr_mail = ?", (correo_receptor,))
-                receptor = cur.fetchone()
-                if not receptor:
-                    flash("El correo del receptor no está registrado.", "danger")
-                    return redirect(url_for('compartir_credencial'))
-
-                id_receptor = receptor['id_usr']
-
-                cur.execute("SELECT secret_pass FROM Users WHERE id_usr = ?", (id_owner,))
-                propietario = cur.fetchone()
-                if not propietario or not check_password_hash(propietario['secret_pass'], clave_validacion):
-                    flash("Clave secundaria incorrecta.", "danger")
-                    return redirect(url_for('compartir_credencial'))
-
-                cur.execute(
-                    "SELECT users_allows FROM Credentials WHERE id_credential = ? AND id_usr = ?",
-                    (id_credencial, id_owner)
-                )
-                credencial = cur.fetchone()
-                if not credencial:
-                    flash("No se encontró la credencial o no eres su propietario.", "danger")
-                    return redirect(url_for('compartir_credencial'))
-
-                try:
-                    usuarios_permitidos = json.loads(credencial['users_allows']) if credencial['users_allows'] else []
-                except json.JSONDecodeError:
-                    usuarios_permitidos = []
-
-                if id_receptor not in usuarios_permitidos:
-                    usuarios_permitidos.append(id_receptor)
-                    cur.execute(
-                        "UPDATE Credentials SET users_allows = ? WHERE id_credential = ?",
-                        (json.dumps(usuarios_permitidos), id_credencial)
-                    )
-                    conn.commit()
-
-            flash("Credencial compartida exitosamente.", "success")
-            
-            # Mantiene un registro de las acciones del usuario 
-            registrar_acceso("compartir", name_owner, id_owner, id_credencial)
-
-            return redirect(url_for('compartir_credencial'))
-        except sqlite3.Error as e:
-            flash(f"Error en la base de datos: {str(e)}", "danger")
-            return redirect(url_for('compartir_credencial'))
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
 
     usuario_id = session.get('usuario_id')
+    usuario_nombre = session.get('usuario_nombre')
     rol = session.get('usuario_rol')
-    conn = sqlite3.connect('instance/ClaveForte.db')
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM Credentials WHERE id_usr = ?", (usuario_id,))
-    credenciales = cur.fetchall()
-    conn.close()
 
-    return render_template('./credentials/compartir/compartir.html',
-                           credenciales=credenciales,
-                           usuario_actual=usuario_id,
-                           usr_rol=rol)
+    # GET → Mostrar vista inicial con credenciales propias
+    if request.method == 'GET':
+        with sqlite3.connect('instance/ClaveForte.db') as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+
+            cur.execute("SELECT * FROM Credentials WHERE id_usr = ?", (usuario_id,))
+            credenciales = cur.fetchall()
+
+            cur.execute("SELECT secret_pass FROM Users WHERE id_usr = ?", (usuario_id,))
+            fila_usuario = cur.fetchone()
+            tiene_pass_secundaria = bool(fila_usuario and fila_usuario['secret_pass'])
+
+        return render_template(
+            './credentials/compartir/compartir.html',
+            credenciales=credenciales,
+            usuario_actual=usuario_id,
+            usr_rol=rol,
+            tiene_pass_secundaria=tiene_pass_secundaria,
+            origen='compartir_credencial'
+        )
+
+    # POST → Procesar formulario para compartir
+    id_credencial = request.form.get('id_credential')
+    correo_receptor = request.form.get('correo_receptor')
+    clave_validacion = request.form.get('pass_validacion')
+
+    # Validación de campos
+    if not id_credencial or not correo_receptor or not clave_validacion:
+        flash("Faltan campos obligatorios.", "danger")
+        return redirect(url_for('compartir_credencial'))
+
+    try:
+        with sqlite3.connect('instance/ClaveForte.db') as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+
+            # Buscar receptor por correo
+            cur.execute("SELECT id_usr FROM Users WHERE usr_mail = ?", (correo_receptor,))
+            receptor = cur.fetchone()
+            if not receptor:
+                flash("El correo del receptor no está registrado.", "danger")
+                return redirect(url_for('compartir_credencial'))
+            id_receptor = receptor['id_usr']
+
+            # Verificar clave secundaria del propietario
+            cur.execute("SELECT secret_pass FROM Users WHERE id_usr = ?", (usuario_id,))
+            propietario = cur.fetchone()
+            if not propietario or not check_password_hash(propietario['secret_pass'], clave_validacion):
+                flash("Clave secundaria incorrecta.", "danger")
+                return redirect(url_for('compartir_credencial'))
+
+            # Verificar propiedad de la credencial
+            cur.execute(
+                "SELECT users_allows FROM Credentials WHERE id_credential = ? AND id_usr = ?",
+                (id_credencial, usuario_id)
+            )
+            credencial = cur.fetchone()
+            if not credencial:
+                flash("No se encontró la credencial o no eres su propietario.", "danger")
+                return redirect(url_for('compartir_credencial'))
+
+            # Agregar receptor si no está ya permitido
+            try:
+                usuarios_permitidos = json.loads(credencial['users_allows']) if credencial['users_allows'] else []
+            except json.JSONDecodeError:
+                usuarios_permitidos = []
+
+            if id_receptor not in usuarios_permitidos:
+                usuarios_permitidos.append(id_receptor)
+                cur.execute(
+                    "UPDATE Credentials SET users_allows = ? WHERE id_credential = ?",
+                    (json.dumps(usuarios_permitidos), id_credencial)
+                )
+                conn.commit()
+
+        # Registrar acción
+        flash("Credencial compartida exitosamente.", "success")
+        registrar_acceso("compartir", usuario_nombre, usuario_id, id_credencial)
+        return redirect(url_for('compartir_credencial'))
+
+    except sqlite3.Error as e:
+        flash(f"Error en la base de datos: {str(e)}", "danger")
+        return redirect(url_for('compartir_credencial'))
 
 
 # ========== ADMINISTRADOR ==========
