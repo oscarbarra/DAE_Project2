@@ -68,7 +68,9 @@ def signup():
         conexion.commit()
         conexion.close()
 
+        flash("Cuenta creada correctamente, inicia sesión", "success")
         return redirect(url_for('login'))
+
     return render_template('/auth/signup.html')
 
 @app.route('/logout')
