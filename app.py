@@ -38,12 +38,15 @@ def login():
                 session['usuario_nombre'] = usr_name
                 session['usuario_correo'] = usr_mail
                 session['usuario_rol'] = id_rol
+                flash("Inicio de sesión exitoso", "success")  
                 return redirect(url_for('home'))
             else:
-                flash("Contraseña incorrecta")
+                flash("Contraseña incorrecta", "danger")
         else:
-            flash("Correo no registrado")
+            flash("Correo no registrado", "danger")
+
     return render_template('/auth/login.html')
+
 
 @app.route('/signup', methods=['GET','POST'])
 def signup():
