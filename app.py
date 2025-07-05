@@ -56,8 +56,8 @@ def signup():
         email = request.form['email']
         password_plano = request.form['password']
         password = generate_password_hash(password_plano)
-        secret = generate_password_hash(password_plano)
-        created = str(datetime.now())
+        secret   = None
+        created  = str(datetime.now())
         rol = request.form['rol']
 
         try:
@@ -184,36 +184,101 @@ def registrar_acceso(motivo, owner_name, id_usr, id_credencial):
         conn.close()
 
 # -------- Credenciales -------
-@app.route('/credentials')
-def credenciales():
-    if not session:
-        return redirect("login")
+@app.route('/crear_pass_secundaria', methods=['POST'])
+def crear_pass_secundaria():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
 
-    usuario_id = session.get('usuario_id')
-    rol = session.get('usuario_rol')
+    usuario_id = session['usuario_id']
+    secret = request.form.get('secret_pass')
+    confirm = request.form.get('confirm_pass')
 
+    if not secret or secret != confirm:
+        flash("Las contraseñas no coinciden.", "danger")
+        return redirect(url_for('mostrar_credenciales'))
+
+    # Conectar a la base de datos
     conn = sqlite3.connect('instance/ClaveForte.db')
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    cur.execute("SELECT * FROM Credentials WHERE id_usr = ? OR users_allows IS NOT NULL", (usuario_id,))
-    todas = cur.fetchall()
+
+    # Obtener la contraseña principal hasheada del usuario
+    cur.execute("SELECT usr_pass FROM Users WHERE id_usr = ?", (usuario_id,))
+    fila = cur.fetchone()
+
+    if fila is None:
+        flash("Usuario no encontrado.", "danger")
+        conn.close()
+        return redirect(url_for('mostrar_credenciales'))
+
+    hash_pass_principal = fila['usr_pass']
+
+    # Verificar si la contraseña secundaria es igual a la principal
+    if check_password_hash(hash_pass_principal, secret):
+        flash("La contraseña secundaria no puede ser igual a tu contraseña principal.", "warning")
+        conn.close()
+        return redirect(url_for('mostrar_credenciales'))
+
+    # Encriptar la contraseña secundaria
+    hashed_secret = generate_password_hash(secret)
+
+    # Guardar en la base de datos
+    cur.execute("UPDATE Users SET secret_pass = ? WHERE id_usr = ?", (hashed_secret, usuario_id))
+    conn.commit()
     conn.close()
 
-    credenciales = []
-    for c in todas:
-        if c['id_usr'] == usuario_id:
-            credenciales.append(c)
+    flash("Contraseña secundaria creada con éxito.", "success")
+    return redirect(url_for('mostrar_credenciales'))
+
+@app.route('/credentials')
+def mostrar_credenciales():
+    # Verificar sesión activa
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+
+    usuario_id = session['usuario_id']
+    usuario_rol = session.get('usuario_rol')
+
+    # Conectar a la base de datos
+    conn = sqlite3.connect('instance/ClaveForte.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # 1. Obtener credenciales que sean del usuario o compartidas
+    cur.execute("""
+        SELECT * FROM Credentials 
+        WHERE id_usr = ? OR users_allows IS NOT NULL
+    """, (usuario_id,))
+    resultados = cur.fetchall()
+
+    # 2. Filtrar credenciales accesibles para el usuario
+    credenciales_visibles = []
+    for credencial in resultados:
+        if credencial['id_usr'] == usuario_id:
+            credenciales_visibles.append(credencial)
         else:
             try:
-                compartidos = json.loads(c['users_allows'])
-                if isinstance(compartidos, list) and usuario_id in compartidos:
-                    credenciales.append(c)
+                usuarios_autorizados = json.loads(credencial['users_allows'])
+                if isinstance(usuarios_autorizados, list) and usuario_id in usuarios_autorizados:
+                    credenciales_visibles.append(credencial)
             except (json.JSONDecodeError, TypeError):
                 continue
-    return render_template('/credentials/credentials.html',
-                           credenciales=credenciales,
-                           usuario_actual=usuario_id,
-                           usr_rol=rol)
+
+    # 3. Verificar si el usuario tiene contraseña secundaria
+    cur.execute("SELECT secret_pass FROM Users WHERE id_usr = ?", (usuario_id,))
+    fila_usuario = cur.fetchone()
+    tiene_pass_secundaria = bool(fila_usuario and fila_usuario['secret_pass'])
+
+    conn.close()
+
+    # 4. Renderizar la plantilla
+    return render_template(
+        'credentials/credentials.html',
+        credenciales=credenciales_visibles,
+        usuario_actual=usuario_id,
+        usr_rol=usuario_rol,
+        tiene_pass_secundaria=tiene_pass_secundaria
+    )
 
 @app.route('/add_credential', methods=['POST'])
 def agregar_credencial():
