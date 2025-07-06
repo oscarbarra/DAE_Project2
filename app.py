@@ -443,6 +443,37 @@ def compartir_credencial():
         flash(f"Error en la base de datos: {str(e)}", "danger")
         return redirect(url_for('compartir_credencial'))
 
+@app.route('/delete_credential/<int:cred_id>', methods=['POST'])
+def eliminar_credencial(cred_id):
+    if 'usuario_id' not in session:
+        flash("No autorizado", "danger")
+        return redirect(url_for('login'))
+
+    usuario_id = session.get('usuario_id')
+    try:
+        conn = sqlite3.connect('instance/ClaveForte.db')
+        cur = conn.cursor()
+
+        # Verifica que la credencial le pertenezca al usuario
+        cur.execute("SELECT * FROM Credentials WHERE id_credential = ? AND id_usr = ?", (cred_id, usuario_id))
+        cred = cur.fetchone()
+
+        if not cred:
+            flash("No puedes eliminar esta credencial", "danger")
+            return redirect(url_for('mostrar_credenciales'))
+
+        cur.execute("DELETE FROM Credentials WHERE id_credential = ?", (cred_id,))
+        conn.commit()
+        flash("Credencial eliminada correctamente", "success")
+
+    except Exception as e:
+        flash(f"Error al eliminar: {str(e)}", "danger")
+    finally:
+        conn.close()
+
+    return redirect(url_for('mostrar_credenciales'))
+
+
 # ========== ADMINISTRADOR ==========
 @app.route('/user_management', methods=['GET', 'POST'])
 def gestionar_usuarios():
@@ -525,4 +556,4 @@ if __name__ == '__main__':
         init_db(db_path)
 
     # --- Aplicación ------------------
-    app.run()
+    app.run(debug=True)
