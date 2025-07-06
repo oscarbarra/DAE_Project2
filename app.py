@@ -471,6 +471,7 @@ def gestionar_usuarios():
             id_usuario = request.form.get('id_usuario')
             conn = sqlite3.connect('instance/ClaveForte.db')
             cur = conn.cursor()
+            cur.execute("DELETE FROM Credentials WHERE id_usr = ?", (id_usuario,))
             cur.execute("DELETE FROM Users WHERE id_usr = ?", (id_usuario,))
             conn.commit()
             conn.close()
@@ -524,4 +525,4 @@ if __name__ == '__main__':
         init_db(db_path)
 
     # --- Aplicación ------------------
-    app.run(debug=True)
+    app.run()
