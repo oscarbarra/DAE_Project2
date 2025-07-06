@@ -17,12 +17,39 @@ app.secret_key = os.getenv('SECRET_KEY')
 fernet = Fernet(os.getenv('FERNET_KEY').encode())
 
 # ========== AUTENTICACIÓN ==========
+# Middleware para verificar si el usuario está autenticado y tiene el rol adecuado
+@app.before_request
+def require_login_and_admin():
+    allowed_routes = ['login', 'signup', 'logout']  # ← añade logout también
+    endpoint = request.endpoint
+
+    # Ignora rutas públicas o archivos estáticos
+    if endpoint is None or endpoint in allowed_routes:
+        return
+
+    # Requiere login
+    if 'usuario_id' not in session:
+        flash('Debes iniciar sesión', 'danger')
+        return redirect(url_for('login'))
+
+    # Rutas de admin solo accesibles si es admin
+    if endpoint in ['gestionar_usuarios', 'acciones_recientes']:
+        if session.get('usuario_rol') != 1:
+            return redirect(url_for('home'))
+
+    # Rutas estándar solo si el rol es 2
+    if endpoint in ['mostrar_credenciales', 'compartir_credencial', 'perfil']:
+        if session.get('usuario_rol') != 2:
+            return redirect(url_for('home'))
+
 @app.route('/')
 def index():
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET','POST'])
 def login():
+    if 'usuario_id' in session: return redirect(url_for('home'))
+
     if request.method == 'POST':
         correo = request.form['email']
         contraseña = request.form['password']
@@ -50,9 +77,10 @@ def login():
         
     return render_template('/auth/login.html')
 
-
 @app.route('/signup', methods=['GET','POST'])
 def signup():
+    if 'usuario_id' in session: return redirect(url_for('home'))
+
     if request.method == 'POST':
         username = request.form['username']
         email = request.form['email']
@@ -91,17 +119,11 @@ def logout():
 # ========== HOME Y PERFIL ==========
 @app.route('/home')
 def home():
-    if not session:
-        return redirect("login")
     rol = session.get('usuario_rol')
-    return render_template('/home/home.html',
-                           usr_rol=rol)
+    return render_template('/home/home.html', usr_rol=rol)
 
 @app.route('/profile', methods=['GET', 'POST'])
 def perfil():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-
     rol = session.get('usuario_rol')
     usuario_id = session['usuario_id']
     conn = sqlite3.connect('instance/ClaveForte.db')
@@ -138,16 +160,10 @@ def perfil():
     cur.execute("SELECT usr_name, usr_mail, id_rol FROM Users WHERE id_usr = ?", (usuario_id,))
     datos = cur.fetchone()
     conn.close()
-    return render_template('/profile/profile.html', 
-                           usr_rol=rol,
-                           usuario=datos)
+    return render_template('/profile/profile.html', usr_rol=rol, usuario=datos)
 
 @app.route('/eliminar_cuenta', methods=['POST'])
 def eliminar_cuenta():
-    if 'usuario_id' not in session:
-        flash("Sesión expirada.")
-        return redirect(url_for('login'))
-
     if request.method == "POST":
         usuario_id = session.get('usuario_id')
         try:
@@ -188,14 +204,10 @@ def registrar_acceso(motivo, owner_name, id_usr, id_credencial):
 # -------- Credenciales -------
 @app.route('/crear_pass_secundaria', methods=['POST'])
 def crear_pass_secundaria():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-
     usuario_id = session['usuario_id']
     secret = request.form.get('secret_pass')
     confirm = request.form.get('confirm_pass')
     origen = request.form.get('origen')
-    print(origen)
 
     if not secret or secret != confirm:
         flash("Las contraseñas no coinciden.", "danger")
@@ -233,11 +245,9 @@ def crear_pass_secundaria():
 
 @app.route('/ver_password/<int:cred_id>', methods=['POST'])
 def ver_password(cred_id):
-    if 'usuario_id' not in session:
-        return jsonify({'error': 'No autorizado'}), 403
-
     data = request.get_json()
     pass_secundaria = data.get('pass_secundaria', None)
+    
     if not pass_secundaria:
         return jsonify({'error': 'Contraseña secundaria requerida'}), 400
 
@@ -269,13 +279,8 @@ def ver_password(cred_id):
     except Exception:
         return jsonify({'error': 'Error al desencriptar'}), 500
 
-
 @app.route('/credentials')
 def mostrar_credenciales():
-    # Verificar sesión activa
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-
     usuario_id = session['usuario_id']
     usuario_rol = session.get('usuario_rol')
 
@@ -312,8 +317,7 @@ def mostrar_credenciales():
     conn.close()
 
     # 4. Renderizar la plantilla
-    return render_template(
-        'credentials/credentials.html',
+    return render_template('credentials/credentials.html',
         credenciales=credenciales_visibles,
         usuario_actual=usuario_id,
         usr_rol=usuario_rol,
@@ -323,9 +327,6 @@ def mostrar_credenciales():
 
 @app.route('/add_credential', methods=['POST'])
 def agregar_credencial():
-    if not session:
-        return redirect("login")
-    
     id_usr = session.get('usuario_id')
     name_owner    = session.get('usuario_nombre')
     service_name  = request.form['servicio']
@@ -353,9 +354,6 @@ def agregar_credencial():
 
 @app.route('/share_credential', methods=['GET', 'POST'])
 def compartir_credencial():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-
     usuario_id = session.get('usuario_id')
     usuario_nombre = session.get('usuario_nombre')
     rol = session.get('usuario_rol')
@@ -445,13 +443,9 @@ def compartir_credencial():
         flash(f"Error en la base de datos: {str(e)}", "danger")
         return redirect(url_for('compartir_credencial'))
 
-
 # ========== ADMINISTRADOR ==========
 @app.route('/user_management', methods=['GET', 'POST'])
 def gestionar_usuarios():
-    if not session:
-        return redirect("login")
-
     if request.method == "POST":
         method = request.form.get('_method')
         if method == 'UPDATE':
@@ -522,7 +516,6 @@ def acciones_recientes():
     return render_template('./admin/recent/recent.html',
                            usr_rol=active_rol,
                            recent_acctions=rcnt_act)
-
 
 # ------- Aplicación General -------
 if __name__ == '__main__':
