@@ -29,24 +29,30 @@
                        placeholder="Dejar en blanco para no cambiar">
             </div>
 
-            <div class="flex justify-end gap-4 pt-2">
-                <!-- Formulario: Guardar Cambios -->
-                <form method="POST" action="{{ url_for('perfil') }}">
-                    <button type="submit"
-                            class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition font-semibold">
-                        Guardar Cambios
-                    </button>
-                </form>
+            <div class="flex pt-2">
+                <ul class="flex justify-between w-full items-stretch">
+                    <li>
+                        <form method="POST" action="{{ url_for('perfil') }}">
+                            <button type="submit"
+                                    class="w-40 py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-semibold text-sm text-center">
+                            Guardar Cambios
+                            </button>
+                        </form>
+                    </li>
 
-                <!-- Formulario: Eliminar Cuenta -->
-                <form method="POST" action="{{ url_for('eliminar_cuenta') }}"
-                    onsubmit="return confirm('¿Deseas eliminar tu cuenta? Esta acción no se puede deshacer.')">
-                    <button type="submit"
-                            class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition font-semibold">
-                        Eliminar Cuenta
-                    </button>
-                </form>
+                    <li>
+                        <form method="POST" action="{{ url_for('eliminar_cuenta') }}"
+                                onsubmit="return confirm('¿Deseas eliminar tu cuenta? Esta acción no se puede deshacer.')">
+                            <button type="submit"
+                                    class="w-40 py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold text-sm text-center">
+                            Eliminar Cuenta
+                            </button>
+                        </form>
+                    </li>
+                </ul>
             </div>
+
+
         </form>
 
         <!-- Panel informativo al lado derecho -->
