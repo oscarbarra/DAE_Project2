@@ -236,24 +236,39 @@ def ver_password(cred_id):
     if 'usuario_id' not in session:
         return jsonify({'error': 'No autorizado'}), 403
 
-    # (opcional) validar clave secundaria aquí
+    data = request.get_json()
+    pass_secundaria = data.get('pass_secundaria', None)
+    if not pass_secundaria:
+        return jsonify({'error': 'Contraseña secundaria requerida'}), 400
+
+    usuario_id = session['usuario_id']
 
     conn = sqlite3.connect('instance/ClaveForte.db')
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
+
+    # Verificar contraseña secundaria del usuario
+    cur.execute("SELECT secret_pass FROM Users WHERE id_usr = ?", (usuario_id,))
+    fila_usuario = cur.fetchone()
+    if not fila_usuario or not check_password_hash(fila_usuario['secret_pass'], pass_secundaria):
+        conn.close()
+        return jsonify({'error': 'Contraseña secundaria incorrecta'}), 403
+
+    # Obtener la contraseña de la credencial
     cur.execute("SELECT service_pass FROM Credentials WHERE id_credential = ?", (cred_id,))
-    fila = cur.fetchone()
+    fila_cred = cur.fetchone()
     conn.close()
 
-    if not fila:
+    if not fila_cred:
         return jsonify({'error': 'Credencial no encontrada'}), 404
 
     try:
         fernet = Fernet(os.getenv("FERNET_KEY").encode())
-        pass_desencriptada = fernet.decrypt(fila['service_pass'].encode()).decode()
+        pass_desencriptada = fernet.decrypt(fila_cred['service_pass'].encode()).decode()
         return jsonify({'password': pass_desencriptada})
-    except Exception as e:
+    except Exception:
         return jsonify({'error': 'Error al desencriptar'}), 500
+
 
 @app.route('/credentials')
 def mostrar_credenciales():
