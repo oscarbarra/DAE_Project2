@@ -175,7 +175,7 @@ def eliminar_cuenta():
             conn.close()
 
             session.clear()
-            flash("Cuenta eliminada correctamente.")
+            flash("Cuenta eliminada correctamente.", "success")
             return redirect(url_for('login'))
         except Exception as e:
             flash(f"Error al eliminar cuenta: {str(e)}")
