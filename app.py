@@ -4,8 +4,9 @@ import json
 import sqlite3
 from datetime import datetime
 from dotenv import load_dotenv
+from cryptography.fernet import Fernet
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Flask, render_template, redirect, url_for, request, session, flash
+from flask import Flask, render_template, redirect, url_for, request, session, flash, jsonify
 
 from models import init_db
 
@@ -13,6 +14,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
+fernet = Fernet(os.getenv('FERNET_KEY').encode())
 
 # ========== AUTENTICACIÓN ==========
 @app.route('/')
@@ -229,6 +231,30 @@ def crear_pass_secundaria():
     finally:
         conn.close()
 
+@app.route('/ver_password/<int:cred_id>', methods=['POST'])
+def ver_password(cred_id):
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 403
+
+    # (opcional) validar clave secundaria aquí
+
+    conn = sqlite3.connect('instance/ClaveForte.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("SELECT service_pass FROM Credentials WHERE id_credential = ?", (cred_id,))
+    fila = cur.fetchone()
+    conn.close()
+
+    if not fila:
+        return jsonify({'error': 'Credencial no encontrada'}), 404
+
+    try:
+        fernet = Fernet(os.getenv("FERNET_KEY").encode())
+        pass_desencriptada = fernet.decrypt(fila['service_pass'].encode()).decode()
+        return jsonify({'password': pass_desencriptada})
+    except Exception as e:
+        return jsonify({'error': 'Error al desencriptar'}), 500
+
 @app.route('/credentials')
 def mostrar_credenciales():
     # Verificar sesión activa
@@ -291,13 +317,16 @@ def agregar_credencial():
     service_pass  = request.form['contrasena']
     users_allows  = json.dumps([])
 
+    encrypted_pass = fernet.encrypt(service_pass.encode())
+    encrypted_pass_str = encrypted_pass.decode()
+
     try:
         conn = sqlite3.connect('instance/ClaveForte.db')
         cur = conn.cursor()
         cur.execute("""
             INSERT INTO Credentials (service_name, service_pass, users_allows, name_owner, id_usr)
             VALUES (?, ?, ?, ?, ?)
-        """, (service_name, service_pass, users_allows,name_owner, id_usr))
+        """, (service_name, encrypted_pass_str, users_allows,name_owner, id_usr))
     finally:
         id_credencial_nueva = cur.lastrowid
         conn.commit()
